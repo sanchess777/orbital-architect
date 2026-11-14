@@ -1,0 +1,91 @@
+import type { Lang } from '../types/game'
+
+const en = {
+  appTitle: 'ORBITAL ARCHITECT',
+  appSubtitle: 'Mission Control // Space Mission Design Game',
+  tagline:
+    'Design, launch and manage a complete space mission. Balance mass, power, budget, data, communications and time, alone or with up to three teammates.',
+  yourName: 'Your name',
+  namePlaceholder: 'Your call sign',
+  createRoom: 'Create room',
+  createHint:
+    'While you are alone in the room, all four roles are yours. Share the invite link to bring in up to three more people.',
+  orJoin: 'or join an existing room',
+  roomCode: 'Room code',
+  joinRoom: 'Join room',
+  nameRequired: 'Please enter your name first.',
+  codeInvalid: 'Enter the 5-character room code.',
+  errNotFound: 'Room not found. Check the code and try again.',
+  errFull: 'This room is full (4 players maximum).',
+  errGeneric: 'Something went wrong. Check your connection and try again.',
+  working: 'Please wait…',
+  loading: 'Loading room…',
+  room: 'Room',
+  copyLink: 'Copy invite link',
+  linkCopied: 'Copied!',
+  leave: 'Leave',
+  players: 'Crew',
+  you: 'you',
+  host: 'host',
+  online: 'online',
+  offline: 'offline',
+  removePlayer: 'remove',
+  roles: 'Mission roles',
+  rolesSolo: 'You are alone in the room, so all four roles are yours.',
+  rolesTeam:
+    'The host keeps every role nobody else has taken. With 2 players the guest can take 2 roles; with 3 or 4 players each guest takes 1.',
+  take: 'Take',
+  release: 'Release',
+  heldBy: 'Held by',
+  roomClosed: 'This room no longer exists.',
+  backToStart: 'Back to start',
+  sharedCounter: 'Shared counter',
+  counterHint: 'Connection test: every player in the room sees the same number instantly.',
+}
+
+export type Dict = typeof en
+
+const uk: Dict = {
+  appTitle: 'ОРБІТАЛЬНИЙ АРХІТЕКТОР',
+  appSubtitle: 'ЦУП // Гра з проєктування космічної місії',
+  tagline:
+    "Спроєктуйте, запустіть і ведіть повну космічну місію. Збалансуйте масу, енергію, бюджет, дані, зв'язок і час: наодинці або з трьома напарниками.",
+  yourName: "Ваше ім'я",
+  namePlaceholder: 'Ваш позивний',
+  createRoom: 'Створити кімнату',
+  createHint:
+    'Поки ви в кімнаті сам, усі чотири ролі ваші. Надішліть посилання-запрошення, щоб додати ще до трьох людей.',
+  orJoin: 'або приєднайтесь до наявної кімнати',
+  roomCode: 'Код кімнати',
+  joinRoom: 'Приєднатися',
+  nameRequired: "Спершу введіть ім'я.",
+  codeInvalid: 'Введіть код кімнати з 5 символів.',
+  errNotFound: 'Кімнату не знайдено. Перевірте код і спробуйте ще раз.',
+  errFull: 'У кімнаті вже 4 гравці, вільних місць немає.',
+  errGeneric: 'Щось пішло не так. Перевірте інтернет і спробуйте ще раз.',
+  working: 'Зачекайте…',
+  loading: 'Завантаження кімнати…',
+  room: 'Кімната',
+  copyLink: 'Копіювати запрошення',
+  linkCopied: 'Скопійовано!',
+  leave: 'Вийти',
+  players: 'Екіпаж',
+  you: 'ви',
+  host: 'власник',
+  online: 'онлайн',
+  offline: 'офлайн',
+  removePlayer: 'прибрати',
+  roles: 'Ролі в місії',
+  rolesSolo: 'Ви в кімнаті сам, тому всі чотири ролі ваші.',
+  rolesTeam:
+    'Власник кімнати лишає собі всі ролі, яких ніхто не взяв. Якщо гравців двоє, гість може взяти 2 ролі; якщо три або чотири, кожен гість бере по 1.',
+  take: 'Взяти',
+  release: 'Віддати',
+  heldBy: 'Відповідає',
+  roomClosed: 'Цієї кімнати більше не існує.',
+  backToStart: 'На початок',
+  sharedCounter: 'Спільний лічильник',
+  counterHint: "Перевірка зв'язку: усі гравці кімнати миттєво бачать те саме число.",
+}
+
+export const UI_TEXT: Record<Lang, Dict> = { en, uk }
