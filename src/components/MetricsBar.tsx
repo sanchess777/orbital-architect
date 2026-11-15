@@ -52,7 +52,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
   const budBad = report.budgetUsedM > report.budgetMaxM
   const budStatus = budBad ? 'bad' : budRatio > 0.9 ? 'warn' : 'ok'
 
-  // 2. Вага апарата vs ракета та корпус
+  // 2. Вага апарата vs ракета та слоти корпусу
   const massRatio = report.rocketLimitKg > 0 ? report.spacecraftMassKg / report.rocketLimitKg : 1.5
   const massBad =
     report.rocketLimitKg <= 0 ||
@@ -62,18 +62,17 @@ export default function MetricsBar({ report }: MetricsBarProps) {
   const massStatus = massBad ? 'bad' : massRatio > 0.9 ? 'warn' : 'ok'
 
   // 3. Швидкість запису інформації (Гбіт/год)
-  const recRatio = report.dataRecGbitHour > 0 ? Math.min(1, report.dataRecGbitHour / 30) : 0
+  const recRatio = report.dataRecGbitHour > 0 ? Math.min(1, report.dataRecGbitHour / 20) : 0
   const recBad = report.dataRecGbitHour <= 0
   const recStatus = recBad ? 'bad' : 'ok'
 
-  // 4. Швидкість передачі на Землю (Гбіт/год) + буфер пам'яті + ADCS
+  // 4. Швидкість передачі на Землю (Гбіт/год) + буфер пам'яті
   const downBad =
     report.contactHoursPerDay <= 0 ||
     report.dataDownlinkGbitHour <= 0 ||
     report.dataDownlinkGbitDay < report.dataGenGbitDay ||
     report.memoryCapacityGbit <= 0 ||
-    report.memoryCapacityGbit < report.memoryRequiredGbit ||
-    !report.adcsCompatible
+    report.memoryCapacityGbit < report.memoryRequiredGbit
   const downRatio =
     report.dataGenGbitDay > 0
       ? Math.min(1, report.dataDownlinkGbitDay / report.dataGenGbitDay)
@@ -95,8 +94,8 @@ export default function MetricsBar({ report }: MetricsBarProps) {
   const batStatus = batBad ? 'bad' : batRatio > 0.9 ? 'warn' : 'ok'
 
   // 7. Очікувана наука
-  const sciRatio = report.scienceRef > 0 ? report.scienceExpected / report.scienceRef : 0
-  const sciBad = report.scienceInstalled < report.scienceMin
+  const sciRatio = report.scienceRef > 0 ? report.scienceInstalled / report.scienceRef : 0
+  const sciBad = report.scienceInstalled < report.scienceMin || !report.adcsSelected
   const sciStatus = sciBad
     ? 'bad'
     : report.scienceInstalled < report.scienceMin * 1.15
@@ -105,7 +104,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
 
   // 8. Ризик провалу
   const riskRatio = report.failProbMax > 0 ? report.failProbTotal / report.failProbMax : 1
-  const riskBad = report.metricIssues.some((m) => m.en === 'Failure Risk')
+  const riskBad = report.failProbTotal > report.failProbMax
   const riskStatus = riskBad
     ? 'bad'
     : report.failProbTotal > report.failProbMax * 0.85
@@ -125,8 +124,8 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         label={t.metricMass}
         value={`${report.spacecraftMassKg.toFixed(0)} / ${report.rocketLimitKg.toFixed(0)} kg`}
         sub={
-          report.dryMassLimitKg > 0
-            ? `Bus max: ${report.dryMassLimitKg} kg`
+          report.maxInstruments > 0
+            ? `${t.slotsShortLabel}: ${report.instrumentsCount}/${report.maxInstruments}`
             : t.busNotSelectedLabel
         }
         ratio={massRatio}
@@ -162,8 +161,8 @@ export default function MetricsBar({ report }: MetricsBarProps) {
       />
       <MetricCard
         label={t.metricScience}
-        value={`${report.scienceExpected.toFixed(1)} pts`}
-        sub={`Inst: ${report.scienceInstalled.toFixed(0)} (min ${report.scienceMin})`}
+        value={`${report.scienceInstalled.toFixed(1)} pts`}
+        sub={`Min ${report.scienceMin} · Ref ${report.scienceRef}`}
         ratio={sciRatio}
         status={sciStatus}
       />

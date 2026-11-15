@@ -74,25 +74,21 @@ export default function OrbitVisualizer({ config, report, onLaunch }: OrbitVisua
               <span className="text-slate-400">{t.busSlotsLabel}</span>
               <span className="font-semibold tabular-nums">
                 {report.platformName
-                  ? `${report.instrumentsCount}/${report.maxInstruments} · ${Math.round(report.spacecraftMassKg)}/${report.dryMassLimitKg} kg`
+                  ? `${report.instrumentsCount}/${report.maxInstruments} · ${Math.round(report.spacecraftMassKg)} kg`
                   : t.notSelectedLabel}
               </span>
             </div>
 
             <div
               className={`flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 ${
-                report.adcsCompatible
+                report.adcsSelected
                   ? 'border-slate-800 bg-slate-950/50 text-slate-200'
                   : 'border-rose-500/50 bg-rose-950/20 text-rose-200'
               }`}
             >
-              <span className="text-slate-400">{t.adcsPointingLabel}</span>
+              <span className="text-slate-400">{t.adcsBonusLabel}</span>
               <span className="font-semibold tabular-nums">
-                {report.adcsPointingDeg !== null
-                  ? report.requiredPointingDeg < 90
-                    ? `${report.adcsPointingDeg}° (≤${report.requiredPointingDeg}°)`
-                    : `${report.adcsPointingDeg}°`
-                  : t.notSelectedLabel}
+                {report.adcsSelected ? `+${report.adcsScienceBonus} sci` : t.notSelectedLabel}
               </span>
             </div>
 
@@ -125,36 +121,11 @@ export default function OrbitVisualizer({ config, report, onLaunch }: OrbitVisua
             <div className="flex items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-slate-200">
               <span className="text-slate-400">{t.propulsionLifeLabel}</span>
               <span className="font-semibold tabular-nums">
-                {report.engineName ? pick(report.engineName) : t.noEngineLabel} · {report.lifeMonths}{' '}
-                {t.monthsUnit}
+                {report.lifeMonths} {t.monthsUnit}
+                {report.lifeBonusPct > 0 ? ` (+${report.lifeBonusPct}% sci)` : ''}
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Очікувані загрози цілі */}
-        <div className="space-y-1.5">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            {t.threatsTitle}
-          </div>
-          {report.threatResults.map((tr) => (
-            <div
-              key={tr.threat.id}
-              className={`rounded border px-2.5 py-2 text-xs ${
-                tr.mitigated
-                  ? 'border-emerald-500/40 bg-emerald-950/20 text-emerald-200'
-                  : 'border-amber-500/40 bg-amber-950/20 text-amber-200'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 font-semibold">
-                <span>{pick(tr.threat.name)}</span>
-                <span className="shrink-0 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px]">
-                  {tr.mitigated ? t.protectedTag : t.vulnerableTag}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-slate-300/90">{pick(tr.threat.mitigationHint)}</p>
-            </div>
-          ))}
         </div>
       </div>
 

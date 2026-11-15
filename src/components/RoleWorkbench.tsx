@@ -18,7 +18,6 @@ import { ROLES, ROLE_INFO } from '../engine/roles'
 import { useLang } from '../i18n/LangContext'
 import { updateMissionConfig } from '../multiplayer/roomApi'
 import type {
-  DutyCycleId,
   GroundStationCount,
   MissionConfig,
   PlayerRole,
@@ -38,6 +37,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
   const config = room.config
   const target = TARGETS[config.targetId]
   const platform = PLATFORMS.find((p) => p.id === config.platformId) ?? null
+  const selectedBattery = BATTERIES.find((b) => b.id === config.batteryId) ?? null
   const maxInstruments = platform ? platform.maxInstruments : 0
 
   const ownerId = room.roleOwners[activeRole]
@@ -59,9 +59,25 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
     }
   }
 
+  const selectPlatform = (platformId: string) => {
+    if (!canEdit) return
+    const nextPlat = PLATFORMS.find((p) => p.id === platformId)
+    const nextMax = nextPlat ? nextPlat.maxInstruments : 0
+    const trimmed =
+      nextMax > 0 && config.instrumentIds.length > nextMax
+        ? config.instrumentIds.slice(0, nextMax)
+        : config.instrumentIds
+    patch({ platformId, instrumentIds: trimmed })
+  }
+
   const activeSynergies = SYNERGIES.filter(
     (s) => config.instrumentIds.includes(s.a) && config.instrumentIds.includes(s.b),
   )
+
+  const batteryMassKg =
+    selectedBattery && config.batteryKwh > 0
+      ? config.batteryKwh * selectedBattery.kgPerKwh
+      : 0
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
@@ -116,6 +132,37 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
       {activeRole === 'science' && (
         <div className="space-y-4">
           <div>
+            <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <span>{t.secPlatform}</span>
+              {!config.platformId && (
+                <span className="text-[11px] font-normal normal-case text-amber-400">
+                  {t.notSelectedLabel}
+                </span>
+              )}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {PLATFORMS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => selectPlatform(p.id)}
+                  className={`rounded border p-2.5 text-left text-xs transition ${
+                    config.platformId === p.id
+                      ? 'border-cyan-400 bg-cyan-950/40'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                  } disabled:cursor-not-allowed`}
+                >
+                  <div className="font-semibold text-slate-100">{pick(p.name)}</div>
+                  <div className="mt-1 text-[11px] text-slate-400">
+                    {p.ownMassKg} kg · {p.coreWatts} W · {p.costM} M$
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
               <span>
                 {t.secInstruments}{' '}
@@ -164,41 +211,10 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                         {inst.dataGbitPerHour} {t.gbitHourUnit}
                       </span>
                       <span>{inst.costM} M$</span>
-                      <span>TRL {inst.trl}</span>
-                      <span>≤{inst.pointingDeg}°</span>
                     </div>
                   </label>
                 )
               })}
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-              {t.secDutyCycle}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  ['eco', t.dutyEco],
-                  ['normal', t.dutyNormal],
-                  ['max', t.dutyMax],
-                ] as [DutyCycleId, string][]
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => patch({ dutyCycle: id })}
-                  className={`rounded border px-3 py-2 text-xs font-semibold transition ${
-                    config.dutyCycle === id
-                      ? 'border-cyan-400 bg-cyan-600/30 text-cyan-200'
-                      : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'
-                  } disabled:cursor-not-allowed`}
-                >
-                  {label}
-                </button>
-              ))}
             </div>
           </div>
         </div>
@@ -207,68 +223,6 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
       {/* ==================== ІНЖЕНЕР АПАРАТА ==================== */}
       {activeRole === 'bus' && (
         <div className="space-y-4">
-          <div>
-            <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
-              <span>{t.secPlatform}</span>
-              {!config.platformId && (
-                <span className="text-[11px] font-normal normal-case text-amber-400">
-                  {t.notSelectedLabel}
-                </span>
-              )}
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => patch({ platformId: p.id })}
-                  className={`rounded border p-2.5 text-left text-xs transition ${
-                    config.platformId === p.id
-                      ? 'border-cyan-400 bg-cyan-950/40'
-                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                  } disabled:cursor-not-allowed`}
-                >
-                  <div className="font-semibold text-slate-100">{pick(p.name)}</div>
-                  <div className="mt-1 text-[11px] text-slate-400">
-                    Max {p.maxInstruments} inst · {p.ownMassKg} kg · {p.coreWatts} W · {p.costM} M$
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
-              <span>{t.secAdcs}</span>
-              {!config.adcsId && (
-                <span className="text-[11px] font-normal normal-case text-amber-400">
-                  {t.notSelectedLabel}
-                </span>
-              )}
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {ADCS_LIST.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => patch({ adcsId: a.id })}
-                  className={`rounded border p-2.5 text-left text-xs transition ${
-                    config.adcsId === a.id
-                      ? 'border-cyan-400 bg-cyan-950/40'
-                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                  } disabled:cursor-not-allowed`}
-                >
-                  <div className="font-semibold text-slate-100">{pick(a.name)}</div>
-                  <div className="mt-1 text-[11px] text-slate-400">
-                    {a.pointingDeg}° · {a.massKg} kg · {a.powerWatts} W · {a.costM} M$
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
             <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
               <span>{t.secPanels}</span>
@@ -298,7 +252,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                 >
                   <div className="font-semibold text-slate-100">{pick(sp.name)}</div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
-                    {sp.kgPerM2} kg/m² · {sp.costMPerM2} M$/m² · TRL {sp.trl}
+                    {sp.kgPerM2} kg/m² · {sp.costMPerM2} M$/m²
                   </div>
                 </button>
               ))}
@@ -352,7 +306,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                 >
                   <div className="font-semibold text-slate-100">{pick(b.name)}</div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
-                    {b.costMPerKwh} M$/kWh · TRL {b.trl}
+                    {b.kgPerKwh} kg/kWh · {b.costMPerKwh} M$/kWh
                   </div>
                 </button>
               ))}
@@ -361,7 +315,8 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               <div className="flex justify-between text-xs text-slate-300">
                 <span>{t.batteryCapLabel}</span>
                 <span className="font-bold tabular-nums text-cyan-300">
-                  {config.batteryKwh.toFixed(2)} kWh ({(config.batteryKwh * 1000).toFixed(0)} Wh)
+                  {config.batteryKwh.toFixed(2)} kWh ({(config.batteryKwh * 1000).toFixed(0)} Wh) ·{' '}
+                  {batteryMassKg.toFixed(1)} kg
                 </span>
               </div>
               <input
@@ -385,21 +340,21 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               <input
                 type="checkbox"
                 disabled={!canEdit}
-                checked={config.optRadHard}
-                onChange={(e) => patch({ optRadHard: e.target.checked })}
-                className="accent-cyan-500"
-              />
-              <span>{t.optRadHard}</span>
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-slate-200">
-              <input
-                type="checkbox"
-                disabled={!canEdit}
                 checked={config.optShield}
                 onChange={(e) => patch({ optShield: e.target.checked })}
                 className="accent-cyan-500"
               />
               <span>{t.optShield}</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-slate-200">
+              <input
+                type="checkbox"
+                disabled={!canEdit}
+                checked={config.optRedundancy}
+                onChange={(e) => patch({ optRedundancy: e.target.checked })}
+                className="accent-cyan-500"
+              />
+              <span>{t.optRedundancy}</span>
             </label>
           </div>
         </div>
@@ -434,11 +389,45 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                       <span className="shrink-0 text-cyan-300">{cap > 0 ? `${cap} kg` : 'N/A'}</span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-400">
-                      {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(0)}% · TRL {rk.trl}
+                      {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(1)}%
                     </div>
                   </button>
                 )
               })}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <span>{t.secAdcs}</span>
+              {!config.adcsId && (
+                <span className="text-[11px] font-normal normal-case text-amber-400">
+                  {t.notSelectedLabel}
+                </span>
+              )}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {ADCS_LIST.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => patch({ adcsId: a.id })}
+                  className={`rounded border p-2.5 text-left text-xs transition ${
+                    config.adcsId === a.id
+                      ? 'border-cyan-400 bg-cyan-950/40'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                  } disabled:cursor-not-allowed`}
+                >
+                  <div className="flex justify-between gap-2 font-semibold text-slate-100">
+                    <span>{pick(a.name)}</span>
+                    <span className="shrink-0 text-cyan-300">+{a.scienceBonus} sci</span>
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-400">
+                    {a.massKg} kg · {a.powerWatts} W · {a.costM} M$
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -459,6 +448,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
             <div className="grid gap-2 sm:grid-cols-3">
               {ENGINES.map((en) => {
                 const selected = config.engineId === en.id
+                const bonusPct = Math.round((en.scienceBonusMult - 1) * 100)
                 return (
                   <button
                     key={en.id}
@@ -474,7 +464,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                     <div className="flex justify-between gap-2 font-semibold text-slate-100">
                       <span>{pick(en.name)}</span>
                       <span className="shrink-0 text-cyan-300">
-                        ~{en.lifeYears} {t.yearsUnit}
+                        +{en.lifeAddYears} {t.yearsUnit} (+{bonusPct}% sci)
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-400">
@@ -485,17 +475,6 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               })}
             </div>
           </div>
-
-          <label className="flex cursor-pointer items-center gap-2 rounded border border-slate-800 bg-slate-950/40 p-3 text-xs text-amber-200">
-            <input
-              type="checkbox"
-              disabled={!canEdit}
-              checked={config.acceptHighRisk}
-              onChange={(e) => patch({ acceptHighRisk: e.target.checked })}
-              className="accent-amber-500"
-            />
-            <span>{t.acceptHighRiskLabel}</span>
-          </label>
         </div>
       )}
 
@@ -535,7 +514,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-400">
-                      {rd.massKg} kg · {rd.powerWatts} W · {rd.costM} M$ · ≤{rd.pointingDeg}°
+                      {rd.massKg} kg · {rd.powerWatts} W · {rd.costM} M$
                     </div>
                   </button>
                 )
@@ -654,21 +633,21 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               <input
                 type="checkbox"
                 disabled={!canEdit}
-                checked={config.optEncryption}
-                onChange={(e) => patch({ optEncryption: e.target.checked })}
+                checked={config.optRadHard}
+                onChange={(e) => patch({ optRadHard: e.target.checked })}
                 className="accent-cyan-500"
               />
-              <span>{t.optEncryption}</span>
+              <span>{t.optRadHard}</span>
             </label>
             <label className="flex cursor-pointer items-center gap-2 text-slate-200">
               <input
                 type="checkbox"
                 disabled={!canEdit}
-                checked={config.optRedundancy}
-                onChange={(e) => patch({ optRedundancy: e.target.checked })}
+                checked={config.optEncryption}
+                onChange={(e) => patch({ optEncryption: e.target.checked })}
                 className="accent-cyan-500"
               />
-              <span>{t.optRedundancy}</span>
+              <span>{t.optEncryption}</span>
             </label>
           </div>
         </div>

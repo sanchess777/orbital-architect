@@ -17,27 +17,27 @@ export type JoinError = 'notFound' | 'full' | 'generic'
 export interface MissionConfig {
   targetId: TargetId
   // Science Lead (Науковий керівник)
-  instrumentIds: string[]
-  dutyCycle: DutyCycleId
-  // Spacecraft Engineer (Інженер апарата)
   platformId: string
-  adcsId: string
+  instrumentIds: string[]
+  dutyCycle?: DutyCycleId
+  // Spacecraft Engineer (Інженер апарата)
   panelId: string
   panelAreaM2: number
   batteryId: string
   batteryKwh: number
-  optRadHard: boolean
   optShield: boolean
+  optRedundancy: boolean
   // Flight Engineer (Інженер польоту)
   rocketId: string
+  adcsId: string
   engineId: string
-  acceptHighRisk: boolean
+  acceptHighRisk?: boolean
   // Comms Officer (Зв'язківець)
   radioId: string
   memoryId: string
   processorId: string
   groundStations: GroundStationCount
-  optRedundancy: boolean
+  optRadHard: boolean
   optEncryption: boolean
 }
 
@@ -86,15 +86,6 @@ export interface RoomState {
 
 /* ==================== КАТАЛОГ ОБЛАДНАННЯ ==================== */
 
-export type ThreatId = 'debris' | 'solar_flare' | 'cyber_attack' | 'conjunction'
-
-export interface TargetThreat {
-  id: ThreatId
-  name: LocalizedText
-  description: LocalizedText
-  mitigationHint: LocalizedText
-}
-
 export interface MissionTarget {
   id: TargetId
   name: LocalizedText
@@ -113,17 +104,16 @@ export interface MissionTarget {
   bClassM: number
   bgRiskTransit: number
   bgRiskIns: number
+  bgRiskOps: number
   sMin: number
   sRef: number
   rMax: number
   analog: LocalizedText
-  threats: [TargetThreat, TargetThreat]
 }
 
 export interface PlatformSpec {
   id: string
   name: LocalizedText
-  maxDryMassKg: number
   maxInstruments: number
   ownMassKg: number
   coreWatts: number
@@ -140,8 +130,6 @@ export interface InstrumentSpec {
   dataGbitPerHour: number
   sciencePoints: number
   costM: number
-  trl: number
-  pointingDeg: number
 }
 
 export interface RocketSpec {
@@ -151,7 +139,6 @@ export interface RocketSpec {
   capKg: Record<TargetId, number>
   costM: number
   reliability: number
-  trl: number
 }
 
 export interface EngineSpec {
@@ -160,18 +147,17 @@ export interface EngineSpec {
   massKg: number
   powerWatts: number
   costM: number
-  lifeYears: number
-  trl: number
+  lifeAddYears: number
+  scienceBonusMult: number
 }
 
 export interface AdcsSpec {
   id: string
   name: LocalizedText
-  pointingDeg: number
+  scienceBonus: number
   massKg: number
   powerWatts: number
   costM: number
-  trl: number
 }
 
 export interface SolarPanelSpec {
@@ -180,15 +166,13 @@ export interface SolarPanelSpec {
   efficiency: number
   kgPerM2: number
   costMPerM2: number
-  trl: number
 }
 
 export interface BatterySpec {
   id: string
   name: LocalizedText
-  whPerKg: number
+  kgPerKwh: number
   costMPerKwh: number
-  trl: number
 }
 
 export interface RadioSpec {
@@ -198,9 +182,7 @@ export interface RadioSpec {
   powerWatts: number
   massKg: number
   rateGbitPerHour: Record<TargetId, number>
-  pointingDeg: number
   costM: number
-  trl: number
 }
 
 export interface MemorySpec {
@@ -210,7 +192,6 @@ export interface MemorySpec {
   massKg: number
   powerWatts: number
   costM: number
-  trl: number
 }
 
 export interface ProcessorSpec {
@@ -221,7 +202,6 @@ export interface ProcessorSpec {
   massKg: number
   powerWatts: number
   costM: number
-  trl: number
 }
 
 /* ==================== РЕЗУЛЬТАТ SOLVER.TS ==================== */
@@ -231,7 +211,12 @@ export type MissionOutcome = 'success' | 'partial' | 'failed' | 'blocked'
 export type MedalTier = 'gold' | 'silver' | 'bronze' | 'experimental'
 
 export interface ThreatResult {
-  threat: TargetThreat
+  threat: {
+    id: string
+    name: LocalizedText
+    description: LocalizedText
+    mitigationHint: LocalizedText
+  }
   mitigated: boolean
   detail: LocalizedText
 }
@@ -242,7 +227,6 @@ export interface MissionReport {
   budgetReserveFrac: number
 
   spacecraftMassKg: number
-  dryMassLimitKg: number
   rocketLimitKg: number
 
   powerGenWatts: number
@@ -266,16 +250,18 @@ export interface MissionReport {
   maxInstruments: number
   busCompatible: boolean
 
-  adcsPointingDeg: number | null
-  requiredPointingDeg: number
-  adcsCompatible: boolean
+  adcsName: LocalizedText | null
+  adcsScienceBonus: number
+  adcsSelected: boolean
 
   engineName: LocalizedText | null
+  lifeBonusPct: number
 
   scienceRaw: number
   scienceInstalled: number
   sciencePotential: number
   scienceExpected: number
+  deliveredScience: number
   scienceMin: number
   scienceRef: number
 

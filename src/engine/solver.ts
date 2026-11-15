@@ -5,12 +5,10 @@ import type {
   MissionOutcome,
   MissionPhaseFail,
   MissionReport,
-  ThreatResult,
 } from '../types/game'
 import {
   ADCS_LIST,
   BATTERIES,
-  DUTY_CYCLE_FACTOR,
   ENGINES,
   GROUND_STATION_COSTS_M,
   INSTRUMENTS,
@@ -43,10 +41,6 @@ function hashSeed(baseSeed: number, attempt: number, salt: number): number {
   return (h ^ (h >>> 16)) >>> 0
 }
 
-function annualFailProb(trl: number): number {
-  return 0.004 * Math.pow(1.6, 9 - trl)
-}
-
 export function solveMission(
   config: MissionConfig,
   seed: number,
@@ -70,17 +64,16 @@ export function solveMission(
   const validInstruments = INSTRUMENTS.filter(
     (inst) => config.instrumentIds.includes(inst.id) && inst.targets.includes(config.targetId)
   )
-  const duty = DUTY_CYCLE_FACTOR[config.dutyCycle] ?? 1.0
 
-  /* ==================== 1. ВАГА АПАРАТА VS РАКЕТА ТА КОРПУС ==================== */
-  const redMassMult = config.optRedundancy ? 1.65 : 1.0
-  const redCostMult = config.optRedundancy ? 1.5 : 1.0
+  /* ==================== 1. ВАГА АПАРАТА VS РАКЕТА ТА СЛОТИ КОРПУСУ ==================== */
+  const redMassMult = config.optRedundancy ? 1.5 : 1.0
+  const redCostMult = config.optRedundancy ? 1.4 : 1.0
 
   const instrMass = validInstruments.reduce((sum, i) => sum + i.massKg, 0)
   const platformMass = platform ? platform.ownMassKg : 0
   const adcsMass = adcs ? adcs.massKg * redMassMult : 0
   const panelsMass = panel ? config.panelAreaM2 * panel.kgPerM2 : 0
-  const batteryMass = battery && config.batteryKwh > 0 ? (config.batteryKwh * 1000) / battery.whPerKg : 0
+  const batteryMass = battery && config.batteryKwh > 0 ? config.batteryKwh * battery.kgPerKwh : 0
   const radioMass = radio ? radio.massKg * redMassMult : 0
   const memoryMass = memory ? memory.massKg * redMassMult : 0
   const procMass = processor ? processor.massKg : 0
@@ -103,12 +96,9 @@ export function solveMission(
     optionsMass
 
   const rocketLimitKg = rocket ? rocket.capKg[config.targetId] : 0
-  const dryMassLimitKg = platform ? platform.maxDryMassKg : 0
   const maxInstruments = platform ? platform.maxInstruments : 0
   const busCompatible =
-    platform !== null &&
-    validInstruments.length <= platform.maxInstruments &&
-    spacecraftMassKg <= platform.maxDryMassKg
+    platform !== null && validInstruments.length <= platform.maxInstruments
 
   /* ==================== 2. ЕНЕРГІЯ ТА БАТАРЕЯ ==================== */
   const powerGenWatts =
@@ -116,7 +106,7 @@ export function solveMission(
       ? config.panelAreaM2 * 1361 * target.solarFlux * panel.efficiency
       : 0
 
-  const instrWatts = validInstruments.reduce((sum, i) => sum + i.powerWatts, 0) * duty
+  const instrWatts = validInstruments.reduce((sum, i) => sum + i.powerWatts, 0)
   const powerNeedWatts =
     (platform ? platform.coreWatts : 0) +
     (adcs ? adcs.powerWatts : 0) +
@@ -127,34 +117,18 @@ export function solveMission(
     instrWatts +
     (config.optEncryption ? 8 : 0) +
     (config.optRadHard ? 10 : 0) +
-    (config.optRedundancy ? 15 : 0)
+    (config.optRedundancy ? 12 : 0)
 
   const batteryCapacityWh = battery ? config.batteryKwh * 1000 : 0
   const batteryRequiredWh = (powerNeedWatts * target.maxEclipseHours) / 0.85
 
   /* ==================== 3. ПОГОДИННИЙ ЗАПИС І ПЕРЕДАЧА ДАНИХ ==================== */
   const compression = processor ? processor.compression : 1
-  const rawDataHour = validInstruments.reduce((sum, i) => sum + i.dataGbitPerHour, 0) * duty
+  const rawDataHour = validInstruments.reduce((sum, i) => sum + i.dataGbitPerHour, 0)
   const dataRecGbitHour = rawDataHour / compression
   const dataGenGbitDay = dataRecGbitHour * 24
 
-  const requiredPointingDeg = Math.min(
-    radio ? radio.pointingDeg : 99,
-    ...validInstruments.map((i) => i.pointingDeg)
-  )
-  const adcsCompatible = adcs !== null && adcs.pointingDeg <= requiredPointingDeg * 3
-
-  const pointingFactor =
-    !adcs
-      ? 0
-      : adcs.pointingDeg <= requiredPointingDeg
-        ? 1.0
-        : Math.pow(requiredPointingDeg / adcs.pointingDeg, 2)
-
-  const radioBaseRate = radio ? radio.rateGbitPerHour[config.targetId] : 0
-  const dataDownlinkGbitHour =
-    radioBaseRate * pointingFactor * (config.optEncryption ? 0.90 : 1.0)
-
+  const dataDownlinkGbitHour = radio ? radio.rateGbitPerHour[config.targetId] : 0
   const contactHoursPerDay = target.contactHoursByStations[config.groundStations] ?? 0
   const maxBlackoutHours = target.maxBlackoutHoursByStations[config.groundStations] ?? 24
 
@@ -163,29 +137,23 @@ export function solveMission(
   const memoryCapacityGbit = memory ? memory.capacityGbit : 0
 
   /* ==================== 4. ТЕРМІН РОБОТИ ТА НАУКА ==================== */
-  const lifeMonths = engine ? Math.round(engine.lifeYears * 12) : 12
+  const addYears = engine ? engine.lifeAddYears : 0
+  const lifeMonths = target.tNomMonths + addYears * 12
+  const lifeMult = engine ? engine.scienceBonusMult : 1.0
+  const lifeBonusPct = Math.round((lifeMult - 1.0) * 100)
 
-  const sortedInstr = [...validInstruments].sort((a, b) => b.sciencePoints - a.sciencePoints)
-  const scienceRaw = sortedInstr.reduce((sum, inst, idx) => {
-    const dimFactor = idx < 4 ? 1.0 : Math.pow(0.85, idx - 3)
-    return sum + inst.sciencePoints * dimFactor
-  }, 0)
-
+  const scienceRaw = validInstruments.reduce((sum, inst) => sum + inst.sciencePoints, 0)
   const activeIds = new Set(validInstruments.map((i) => i.id))
   const synergyBonus = SYNERGIES.reduce(
     (sum, syn) => (activeIds.has(syn.a) && activeIds.has(syn.b) ? sum + syn.bonus : sum),
     0
   )
 
-  const avgInstrSurvival =
-    validInstruments.length > 0
-      ? validInstruments.reduce((sum, inst) => {
-          const pFailYr = annualFailProb(inst.trl)
-          return sum + Math.max(0, 1 - pFailYr * (target.tNomMonths / 12))
-        }, 0) / validInstruments.length
-      : 0
+  const adcsScienceBonus = adcs ? adcs.scienceBonus : 0
+  const adcsSelected = adcs !== null
 
-  const scienceInstalled = scienceRaw * (1 + synergyBonus) * avgInstrSurvival
+  const scienceInstalled = (scienceRaw * (1 + synergyBonus) + adcsScienceBonus) * lifeMult
+  const sciencePotential = scienceInstalled
 
   /* ==================== 5. БЮДЖЕТ ==================== */
   const instrCost = validInstruments.reduce((sum, i) => sum + i.costM, 0)
@@ -217,125 +185,28 @@ export function solveMission(
   const budgetReserveFrac =
     budgetMaxM > 0 ? Math.max(0, (budgetMaxM - budgetUsedM) / budgetMaxM) : 0
 
-  /* ==================== 6. НАДІЙНІСТЬ ТА РИЗИКИ ==================== */
-  const fBudget = 1 - 0.30 * (1 - Math.exp(-budgetReserveFrac / 0.08))
-  const hasMassMargin =
-    rocketLimitKg > 0 && (rocketLimitKg - spacecraftMassKg) / rocketLimitKg >= 0.10
-  const hasPowerMargin =
-    powerGenWatts > 0 && (powerGenWatts - powerNeedWatts) / powerGenWatts >= 0.15
-  const fMargin =
-    hasMassMargin && hasPowerMargin ? 0.90 : hasMassMargin || hasPowerMargin ? 0.95 : 1.0
-  const fRisk = fBudget * fMargin
-
+  /* ==================== 6. РИЗИК ПРОВАЛУ ТА ЗАХИСНІ ОПЦІЇ ==================== */
   const pLaunch = rocket ? 1 - rocket.reliability : 1
-  const pTransit = target.bgRiskTransit * fRisk
 
-  const pFlex = panel?.id === 'flex' ? 0.04 * fRisk : 0
-  const pIns = 1 - (1 - target.bgRiskIns * fRisk) * (1 - pFlex)
+  const shieldTransitFactor = config.optShield ? 0.72 : 1.0
+  const radHardTransitFactor = config.optRadHard ? 0.75 : 1.0
+  const pTransit = target.bgRiskTransit * shieldTransitFactor * radHardTransitFactor
 
-  const yearsNom = target.tNomMonths / 12
-  const opsSubsystems = [
-    adcs ? { trl: adcs.trl, red: config.optRedundancy } : null,
-    radio ? { trl: radio.trl, red: config.optRedundancy } : null,
-    memory ? { trl: memory.trl, red: config.optRedundancy } : null,
-    panel ? { trl: panel.trl, red: false } : null,
-  ].filter((x): x is { trl: number; red: boolean } => x !== null)
+  const radHardInsFactor = config.optRadHard ? 0.78 : 1.0
+  const reserveFactor = 1 - 0.12 * Math.min(1, budgetReserveFrac / 0.15)
+  const pIns = target.bgRiskIns * radHardInsFactor * reserveFactor
 
-  let opsSurvival = 1.0
-  for (const sub of opsSubsystems) {
-    let pYr = annualFailProb(sub.trl) * fRisk
-    if (sub.red) pYr = pYr * pYr
-    opsSurvival *= Math.pow(Math.max(0, 1 - pYr), yearsNom)
-  }
-  const pOps = 1 - opsSurvival
+  let pOps = target.bgRiskOps
+  if (config.optRedundancy) pOps *= 0.55
+  if (config.optRadHard) pOps *= 0.80
+  if (config.optShield) pOps *= 0.82
+  if (config.optEncryption) pOps *= 0.80
+  pOps *= reserveFactor
 
   const failProbTotal = 1 - (1 - pLaunch) * (1 - pTransit) * (1 - pIns) * (1 - pOps)
+  const scienceExpected = sciencePotential * (1 - failProbTotal)
 
-  /* ==================== 7. ОЦІНКА ЗАГРОЗ ==================== */
-  const evaluateThreat = (threatId: (typeof target.threats)[number]['id']): {
-    mitigated: boolean
-    detail: LocalizedText
-  } => {
-    if (threatId === 'debris') {
-      return config.optShield
-        ? {
-            mitigated: true,
-            detail: {
-              en: 'Whipple shield absorbed micrometeorite impacts.',
-              uk: 'Екран Віппла витримав удари мікрометеоритів.',
-            },
-          }
-        : {
-            mitigated: false,
-            detail: {
-              en: 'Micrometeorite hit damaged solar array & thermal insulation (-20% science).',
-              uk: 'Удар мікрометеорита пошкодив панелі й термоізоляцію (-20% науки).',
-            },
-          }
-    }
-    if (threatId === 'cyber_attack') {
-      return config.optEncryption
-        ? {
-            mitigated: true,
-            detail: {
-              en: 'Encrypted link blocked unauthorized command injection.',
-              uk: 'Шифрований канал заблокував спробу підміни команд.',
-            },
-          }
-        : {
-            mitigated: false,
-            detail: {
-              en: 'RF spoofing forced spacecraft into safe mode (-20% science).',
-              uk: 'Спуфінг-атака перевела апарат у безпечний режим (-20% науки).',
-            },
-          }
-    }
-    if (threatId === 'solar_flare') {
-      return config.optRadHard
-        ? {
-            mitigated: true,
-            detail: {
-              en: 'Radiation-hardened CPU survived solar proton storm without bit-flips.',
-              uk: 'Радіаційно стійкий процесор витримав сонячний спалах без збоїв.',
-            },
-          }
-        : {
-            mitigated: false,
-            detail: {
-              en: 'Solar flare corrupted flight memory and rebooted avionics (-20% science).',
-              uk: 'Сонячний спалах пошкодив пам’ять і перезавантажив борт (-20% науки).',
-            },
-          }
-    }
-    const requiredBuffer = dataGenGbitDay * 14
-    const ok = memoryCapacityGbit >= requiredBuffer && requiredBuffer > 0
-    return ok
-      ? {
-          mitigated: true,
-          detail: {
-            en: `Onboard storage (${memoryCapacityGbit} Gbit) buffered all 14 days of conjunction data.`,
-            uk: `Бортова пам’ять (${memoryCapacityGbit} Гбіт) зберегла всі дані за 14 діб кон’юнкції.`,
-          },
-        }
-      : {
-          mitigated: false,
-          detail: {
-            en: `Buffer overflow during 14-day solar blackout (needed ${Math.ceil(requiredBuffer)} Gbit; -20% science).`,
-            uk: `Переповнення пам’яті під час 14-денної кон’юнкції (треба ${Math.ceil(requiredBuffer)} Гбіт; -20% науки).`,
-          },
-        }
-  }
-
-  const threatResults: ThreatResult[] = target.threats.map((threat) => {
-    const res = evaluateThreat(threat.id)
-    return {
-      threat,
-      mitigated: res.mitigated,
-      detail: res.detail,
-    }
-  })
-
-  /* ==================== 8. ПЕРЕВІРКА 8 ВЕРХНІХ МЕТРИК ==================== */
+  /* ==================== 7. ПЕРЕВІРКА 8 ВЕРХНІХ МЕТРИК ==================== */
   const metricIssues: LocalizedText[] = []
 
   if (budgetUsedM > budgetMaxM) {
@@ -357,8 +228,7 @@ export function solveMission(
     dataDownlinkGbitHour <= 0 ||
     dataDownlinkGbitDay < dataGenGbitDay ||
     memoryCapacityGbit <= 0 ||
-    memoryCapacityGbit < memoryRequiredGbit ||
-    !adcsCompatible
+    memoryCapacityGbit < memoryRequiredGbit
   ) {
     metricIssues.push({ en: 'Earth Downlink', uk: 'Передача на Землю' })
   }
@@ -368,25 +238,16 @@ export function solveMission(
   if (batteryCapacityWh <= 0 || batteryCapacityWh < batteryRequiredWh) {
     metricIssues.push({ en: 'Battery', uk: 'Батарея' })
   }
-  if (scienceInstalled < target.sMin) {
+  if (scienceInstalled < target.sMin || !adcsSelected) {
     metricIssues.push({ en: 'Expected Science', uk: 'Очікувана наука' })
   }
-  if (failProbTotal > target.rMax && !config.acceptHighRisk) {
+  if (failProbTotal > target.rMax) {
     metricIssues.push({ en: 'Failure Risk', uk: 'Ризик провалу' })
   }
 
   const canLaunch = metricIssues.length === 0
 
-  /* ==================== 9. ОЧІКУВАНА НАУКА ==================== */
-  const fDuty = Math.sqrt(duty)
-  const fLife = Math.min(1.0, lifeMonths / target.tNomMonths)
-  const unmitigatedPreview = threatResults.filter((tr) => !tr.mitigated).length
-  const expectedThreatFactor = Math.max(0.5, 1 - 0.14 * unmitigatedPreview)
-
-  const sciencePotential = scienceInstalled * fDuty * fLife * expectedThreatFactor
-  const scienceExpected = sciencePotential * (1 - failProbTotal)
-
-  /* ==================== 10. СИМУЛЯЦІЯ ПОЛЬОТУ ==================== */
+  /* ==================== 8. СИМУЛЯЦІЯ ПОЛЬОТУ ТА ЧАСТКОВИХ ЗБОЇВ ==================== */
   const rng = createRng(hashSeed(seed, attempt, 777))
   const telemetryLog: LocalizedText[] = []
 
@@ -424,8 +285,8 @@ export function solveMission(
         uk: `Переліт завершено (${target.flightDays} діб) — траєкторія в нормі.`,
       },
       failMsg: {
-        en: 'Deep-space navigation & attitude loss during interplanetary cruise.',
-        uk: 'Втрата орієнтації та зв’язку під час міжпланетного перельоту.',
+        en: 'Deep-space navigation & radiation fault during transit.',
+        uk: 'Критичний збій навігації та електроніки під час перельоту.',
       },
     },
     {
@@ -442,14 +303,14 @@ export function solveMission(
     },
     {
       phase: 'ops',
-      prob: pOps,
+      prob: pOps * 0.35,
       okMsg: {
         en: `Orbital science campaign active for ${lifeMonths.toFixed(0)} months.`,
-        uk: `Орбітальна наукова програма успішно відпрацювала ${lifeMonths.toFixed(0)} міс.`,
+        uk: `Орбітальна наукова програма відпрацювала ${lifeMonths.toFixed(0)} міс.`,
       },
       failMsg: {
-        en: 'Critical avionics failure terminated orbital operations early.',
-        uk: 'Критична відмова бортової електроніки достроково припинила місію.',
+        en: 'Critical subsystem failure terminated orbital operations early.',
+        uk: 'Критична відмова бортових систем достроково припинила місію.',
       },
     },
   ]
@@ -467,7 +328,7 @@ export function solveMission(
         outcome = 'failed'
         failedPhase = step.phase
         failureReason = step.failMsg
-        deliveredScience = step.phase === 'ops' ? sciencePotential * 0.25 : 0
+        deliveredScience = step.phase === 'ops' ? sciencePotential * 0.2 : 0
         telemetryLog.push(step.failMsg)
         break
       }
@@ -475,49 +336,75 @@ export function solveMission(
     }
 
     if (outcome === 'success') {
-      let threatMultiplier = 1.0
-      for (const tr of threatResults) {
-        const triggered = rng() < 0.65
-        if (triggered) {
-          telemetryLog.push(tr.detail)
-          if (!tr.mitigated) {
-            threatMultiplier *= 0.80
-          }
+      // Симуляція нефатальних збоїв на орбіті (мінус очки науки при поломці)
+      const minorEvents: Array<{
+        chance: number
+        lossFrac: number
+        msg: LocalizedText
+      }> = [
+        {
+          chance: config.optShield ? 0.04 : 0.22,
+          lossFrac: 0.25,
+          msg: {
+            en: 'Micrometeorite impact degraded thermal & optical sensor (-25% science).',
+            uk: 'Удар мікрометеорита пошкодив сенсорний блок (-25% очок науки).',
+          },
+        },
+        {
+          chance: config.optRadHard ? 0.04 : 0.22,
+          lossFrac: 0.25,
+          msg: {
+            en: 'Solar particle event caused memory bit-flips and data loss (-25% science).',
+            uk: 'Сонячний спалах спричинив збій електроніки та втрату даних (-25% очок науки).',
+          },
+        },
+        {
+          chance: config.optEncryption ? 0.03 : 0.18,
+          lossFrac: 0.20,
+          msg: {
+            en: 'Command-link interference forced unscheduled safe-mode reboot (-20% science).',
+            uk: 'Перешкоди в каналі управління перевели апарат у безпечний режим (-20% очок науки).',
+          },
+        },
+        {
+          chance: config.optRedundancy ? 0.04 : 0.24,
+          lossFrac: 0.25,
+          msg: {
+            en: 'Secondary power bus degradation reduced instrument uptime (-25% science).',
+            uk: 'Деградація вторинної шини живлення скоротила час зйомки (-25% очок науки).',
+          },
+        },
+      ]
+
+      let sciMultiplier = 1.0
+      for (const ev of minorEvents) {
+        if (rng() < ev.chance) {
+          sciMultiplier *= 1 - ev.lossFrac
+          telemetryLog.push(ev.msg)
         }
       }
-      deliveredScience = sciencePotential * threatMultiplier
+
+      deliveredScience = sciencePotential * sciMultiplier
       if (deliveredScience < target.sMin) {
         outcome = 'partial'
       }
     }
   }
 
-  /* ==================== 11. ФІНАЛЬНИЙ РЕЙТИНГ (0–1000) ==================== */
+  /* ==================== 9. ФІНАЛЬНИЙ РЕЙТИНГ (0–100 ВИКЛЮЧНО ЗА НАУКУ) ==================== */
   let score = 0
   if (outcome === 'success' || outcome === 'partial') {
-    const sciNorm = Math.min(1.0, deliveredScience / target.sRef)
-    const relMult = 0.55 + 0.45 * Math.max(0, 1 - failProbTotal)
-    const sciScore = 700 * sciNorm * relMult
-
-    const extRatio = Math.max(0, lifeMonths / target.tNomMonths - 1.0) / 1.5
-    const lifeScore = 200 * Math.min(1.0, extRatio)
-
-    const massReserveFrac =
-      rocketLimitKg > 0 ? Math.max(0, (rocketLimitKg - spacecraftMassKg) / rocketLimitKg) : 0
-    const effScore =
-      100 * Math.min(1.0, 0.65 * (budgetReserveFrac / 0.25) + 0.35 * (massReserveFrac / 0.25))
-
-    score = Math.round(sciScore + lifeScore + effScore)
+    score = Math.min(100, Math.round((deliveredScience / target.sRef) * 100))
   } else if (outcome === 'failed' && failedPhase === 'ops') {
-    score = Math.round(140 * Math.min(1, deliveredScience / target.sRef))
+    score = Math.min(100, Math.round((deliveredScience / target.sRef) * 100))
   }
 
   let medal: MedalTier = 'experimental'
-  if (outcome === 'success' && score >= 800) {
+  if (outcome === 'success' && score >= 80) {
     medal = 'gold'
-  } else if (outcome === 'success' && score >= 600) {
+  } else if (outcome === 'success' && score >= 60) {
     medal = 'silver'
-  } else if (outcome === 'success' || outcome === 'partial') {
+  } else if ((outcome === 'success' || outcome === 'partial') && score >= 35) {
     medal = 'bronze'
   }
 
@@ -526,7 +413,6 @@ export function solveMission(
     budgetMaxM,
     budgetReserveFrac,
     spacecraftMassKg,
-    dryMassLimitKg,
     rocketLimitKg,
     powerGenWatts,
     powerNeedWatts,
@@ -544,14 +430,16 @@ export function solveMission(
     instrumentsCount: validInstruments.length,
     maxInstruments,
     busCompatible,
-    adcsPointingDeg: adcs ? adcs.pointingDeg : null,
-    requiredPointingDeg,
-    adcsCompatible,
+    adcsName: adcs ? adcs.name : null,
+    adcsScienceBonus,
+    adcsSelected,
     engineName: engine ? engine.name : null,
+    lifeBonusPct,
     scienceRaw,
     scienceInstalled,
     sciencePotential,
     scienceExpected,
+    deliveredScience,
     scienceMin: target.sMin,
     scienceRef: target.sRef,
     failProbTotal,
@@ -569,7 +457,7 @@ export function solveMission(
     outcome,
     failedPhase,
     failureReason,
-    threatResults,
+    threatResults: [],
     telemetryLog,
     score,
     medal,
