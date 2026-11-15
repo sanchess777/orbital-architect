@@ -54,6 +54,12 @@ const en = {
   daysUnit: 'd',
   monthsUnit: 'mo',
 
+  // Перемикач ролей під час гри
+  crewAndRolesBtn: 'Crew & Roles',
+  hideRolesBtn: 'Hide Roles',
+  noRoleBanner: 'You have no role assigned yet — claim a role to edit its systems.',
+  pickRoleBtn: 'Choose Role',
+
   // Верхня панель 8 метрик
   metricBudget: 'Budget',
   metricMass: 'Launch Mass',
@@ -190,6 +196,12 @@ const uk: Dict = {
   targetScienceMin: 'Мін. наука',
   daysUnit: 'діб',
   monthsUnit: 'міс.',
+
+  // Перемикач ролей під час гри
+  crewAndRolesBtn: 'Екіпаж і ролі',
+  hideRolesBtn: 'Сховати ролі',
+  noRoleBanner: 'У вас ще немає ролі — оберіть роль, щоб редагувати її системи.',
+  pickRoleBtn: 'Обрати роль',
 
   // Верхня панель 8 метрик
   metricBudget: 'Бюджет',

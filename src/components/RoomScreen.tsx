@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { TARGETS, TARGET_ORDER } from '../engine/catalog'
+import { ROLES } from '../engine/roles'
 import { solveMission } from '../engine/solver'
 import { useLang } from '../i18n/LangContext'
 import {
@@ -8,6 +9,7 @@ import {
   launchMission,
   releaseRole,
   removePlayer,
+  setRoleReady,
   startMissionDesign,
 } from '../multiplayer/roomApi'
 import { useRoom } from '../multiplayer/useRoom'
@@ -29,6 +31,7 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
   const { t, pick } = useLang()
   const { status, room } = useRoom(code, selfId)
   const [selectedTarget, setSelectedTarget] = useState<TargetId>('leo')
+  const [rolesDrawerOpen, setRolesDrawerOpen] = useState(false)
   const isMember = room?.players.some((p) => p.id === selfId) ?? false
 
   useEffect(() => attachPresence(code, selfId), [code, selfId])
@@ -62,10 +65,23 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
   }
 
   const isHost = room.hostId === selfId
+  const myRolesCount = ROLES.filter((r) => room.roleOwners[r] === selfId).length
 
   const handleTake = (role: PlayerRole) => {
     const present = new Set(room.players.filter((p) => p.online).map((p) => p.id))
-    claimRole(code, role, selfId, present).catch(() => undefined)
+    claimRole(code, role, selfId, present)
+      .then((ok) => {
+        if (ok) setRoleReady(code, role, false).catch(() => undefined)
+      })
+      .catch(() => undefined)
+  }
+
+  const handleRelease = (role: PlayerRole) => {
+    releaseRole(code, role)
+      .then(() => {
+        setRoleReady(code, role, false).catch(() => undefined)
+      })
+      .catch(() => undefined)
   }
 
   /* ==================== ФАЗА 1: ЛОБІ ТА ВИБІР ЦІЛІ МІСІЇ ==================== */
@@ -85,9 +101,7 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
             room={room}
             selfId={selfId}
             onTake={handleTake}
-            onRelease={(role) => {
-              releaseRole(code, role).catch(() => undefined)
-            }}
+            onRelease={handleRelease}
           />
 
           {/* Вибір цілі місії власником */}
@@ -161,7 +175,7 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
-      {/* Компактний заголовок місії */}
+      {/* Компактний заголовок місії + кнопка вибору ролей */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-bold text-cyan-300">{pick(currentTarget.name)}</span>
@@ -173,12 +187,56 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400">
             {t.players}: {room.players.filter((p) => p.online).length}/4
           </span>
+          <button
+            type="button"
+            onClick={() => setRolesDrawerOpen((v) => !v)}
+            className={`rounded border px-3 py-1 text-xs font-semibold transition ${
+              rolesDrawerOpen
+                ? 'border-cyan-400 bg-cyan-600/30 text-cyan-200'
+                : 'border-slate-700 bg-slate-800 text-slate-200 hover:border-cyan-500'
+            }`}
+          >
+            {rolesDrawerOpen ? t.hideRolesBtn : t.crewAndRolesBtn}
+          </button>
         </div>
       </div>
+
+      {/* Підказка для гравця, який щойно приєднався до запущеної кімнати без ролі */}
+      {myRolesCount === 0 && !rolesDrawerOpen && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-950/30 px-4 py-2.5 text-xs text-amber-200">
+          <span>{t.noRoleBanner}</span>
+          <button
+            type="button"
+            onClick={() => setRolesDrawerOpen(true)}
+            className="rounded bg-amber-500 px-3 py-1.5 font-bold text-slate-950 transition hover:bg-amber-400"
+          >
+            {t.pickRoleBtn}
+          </button>
+        </div>
+      )}
+
+      {/* Висувна панель екіпажу та перерозподілу ролей у будь-який момент */}
+      {rolesDrawerOpen && (
+        <section className="grid gap-4 rounded-lg border border-cyan-500/40 bg-slate-900/90 p-4 lg:grid-cols-[320px_1fr]">
+          <PlayersPanel
+            room={room}
+            selfId={selfId}
+            onRemove={(id) => {
+              removePlayer(code, id).catch(() => undefined)
+            }}
+          />
+          <RolesPanel
+            room={room}
+            selfId={selfId}
+            onTake={handleTake}
+            onRelease={handleRelease}
+          />
+        </section>
+      )}
 
       {/* Верхня панель 8 метрик (видна всім учасникам) */}
       <MetricsBar report={report} />
