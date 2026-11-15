@@ -1,45 +1,94 @@
 import { onValue, ref } from 'firebase/database'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createDefaultConfig } from '../engine/catalog'
 import { computeRoleOwners, resolveHostId, sortPlayers } from '../engine/roles'
-import type { Player, RawRoom, RoomState } from '../types/game'
+import type { MissionConfig, Player, RawRoom, RoomState } from '../types/game'
 import { db } from './firebase'
 
 export type RoomStatus = 'loading' | 'ready' | 'missing'
 
-export function useRoom(code: string, selfId: string): { status: RoomStatus; room: RoomState | null } {
-  // undefined = ще вантажиться, null = кімнати немає
-  const [raw, setRaw] = useState<RawRoom | null | undefined>(undefined)
+export interface UseRoomResult {
+  status: RoomStatus
+  room: RoomState | null
+}
 
-  useEffect(
-    () =>
-      onValue(ref(db, `rooms/${code}`), (snap) => {
-        setRaw(snap.exists() ? (snap.val() as RawRoom) : null)
-      }),
-    [code],
-  )
+interface SnapshotState {
+  forCode: string
+  status: Exclude<RoomStatus, 'loading'>
+  room: RoomState | null
+}
 
-  const room = useMemo<RoomState | null>(() => {
-    if (!raw) return null
-    const players: Player[] = Object.entries(raw.players ?? {})
-      .filter(([, p]) => typeof p.name === 'string')
-      .map(([id, p]) => ({
-        id,
-        name: p.name,
-        joinedAt: p.joinedAt ?? 0,
-        // себе вважаємо онлайн одразу, не чекаючи запису з'єднання
-        online: id === selfId || Object.keys(p.connections ?? {}).length > 0,
-      }))
-    const sorted = sortPlayers(players)
-    return {
-      code,
-      hostId: resolveHostId(raw.hostId, sorted),
-      seed: raw.seed ?? 0,
-      counter: raw.counter ?? 0,
-      players: sorted,
-      roleOwners: computeRoleOwners(raw.hostId, sorted, raw.claims ?? {}),
+export function useRoom(code: string, selfId?: string): UseRoomResult {
+  const [snapshot, setSnapshot] = useState<SnapshotState | null>(null)
+
+  useEffect(() => {
+    const roomRef = ref(db, `rooms/${code}`)
+
+    const unsubscribe = onValue(
+      roomRef,
+      (snap) => {
+        if (!snap.exists()) {
+          setSnapshot({ forCode: code, status: 'missing', room: null })
+          return
+        }
+
+        const raw = snap.val() as RawRoom
+        const rawPlayers: Player[] = Object.entries(raw.players ?? {}).map(([id, p]) => ({
+          id,
+          name: p.name,
+          joinedAt: p.joinedAt,
+          online:
+            id === selfId ||
+            Boolean(p.connections && Object.keys(p.connections).length > 0),
+        }))
+
+        const players = sortPlayers(rawPlayers)
+        const hostId = resolveHostId(raw.hostId, players)
+        const roleOwners = computeRoleOwners(raw.hostId, players, raw.claims ?? {})
+
+        const defaultCfg = createDefaultConfig(raw.config?.targetId ?? 'leo')
+        const config: MissionConfig = raw.config
+          ? {
+              ...defaultCfg,
+              ...raw.config,
+              // Firebase видаляє порожні масиви, тому гарантуємо валідний string[]
+              instrumentIds: raw.config.instrumentIds ?? [],
+            }
+          : defaultCfg
+
+        const room: RoomState = {
+          code,
+          hostId,
+          seed: raw.seed,
+          counter: raw.counter ?? 0,
+          players,
+          roleOwners,
+          phase: raw.phase ?? 'lobby',
+          attempt: raw.attempt ?? 1,
+          config,
+          readyRoles: {
+            science: Boolean(raw.readyRoles?.science),
+            bus: Boolean(raw.readyRoles?.bus),
+            flight: Boolean(raw.readyRoles?.flight),
+            comms: Boolean(raw.readyRoles?.comms),
+          },
+        }
+
+        setSnapshot({ forCode: code, status: 'ready', room })
+      },
+      () => {
+        setSnapshot({ forCode: code, status: 'missing', room: null })
+      },
+    )
+
+    return () => {
+      unsubscribe()
     }
-  }, [raw, code, selfId])
+  }, [code, selfId])
 
-  const status: RoomStatus = raw === undefined ? 'loading' : raw === null ? 'missing' : 'ready'
-  return { status, room }
+  if (!snapshot || snapshot.forCode !== code) {
+    return { status: 'loading', room: null }
+  }
+
+  return { status: snapshot.status, room: snapshot.room }
 }

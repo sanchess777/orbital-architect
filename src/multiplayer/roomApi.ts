@@ -6,10 +6,12 @@ import {
   remove,
   runTransaction,
   set,
+  update,
   type DatabaseReference,
 } from 'firebase/database'
+import { createDefaultConfig } from '../engine/catalog'
 import { MAX_PLAYERS, ROLES } from '../engine/roles'
-import type { PlayerRole, RawRoom } from '../types/game'
+import type { MissionConfig, PlayerRole, RawRoom, TargetId } from '../types/game'
 import { db } from './firebase'
 import { CODE_LENGTH } from './session'
 
@@ -41,6 +43,10 @@ export async function createRoom(playerId: string, name: string): Promise<string
         counter: 0,
         createdAt: now,
         players: { [playerId]: { name, joinedAt: now } },
+        phase: 'lobby',
+        attempt: 1,
+        config: createDefaultConfig('leo'),
+        readyRoles: { science: false, bus: false, flight: false, comms: false },
       }
       return room
     })
@@ -152,4 +158,59 @@ export function attachPresence(code: string, playerId: string): () => void {
     stop()
     if (connRef) remove(connRef)
   }
+}
+
+/* ==================== КЕРУВАННЯ ФАЗАМИ Й КОНФІГУРАЦІЄЮ МІСІЇ ==================== */
+
+/** Власник обирає ціль місії у лобі та відкриває екран конструктора */
+export async function startMissionDesign(code: string, targetId: TargetId): Promise<void> {
+  await update(roomRef(code), {
+    phase: 'design',
+    attempt: 1,
+    config: createDefaultConfig(targetId),
+    readyRoles: { science: false, bus: false, flight: false, comms: false },
+  })
+}
+
+/** Оновлює параметри конфігурації; при будь-якій зміні скидає підтвердження GO */
+export async function updateMissionConfig(
+  code: string,
+  patch: Partial<MissionConfig>,
+): Promise<void> {
+  await runTransaction(roomRef(code), (room: RawRoom | null) => {
+    if (!room) return room
+    const baseConfig = room.config ?? createDefaultConfig('leo')
+    return {
+      ...room,
+      config: { ...baseConfig, ...patch },
+      readyRoles: { science: false, bus: false, flight: false, comms: false },
+    }
+  })
+}
+
+/** Гравець підтверджує або знімає GO для своєї ролі */
+export async function setRoleReady(
+  code: string,
+  role: PlayerRole,
+  ready: boolean,
+): Promise<void> {
+  await set(ref(db, `rooms/${code}/readyRoles/${role}`), ready)
+}
+
+/** Запуск місії після підтвердження всіх 4 ролей */
+export async function launchMission(code: string): Promise<void> {
+  await set(ref(db, `rooms/${code}/phase`), 'report')
+}
+
+/** Повернення зі звіту назад у конструктор для доопрацювання (новий attempt для кубика) */
+export async function returnToDesign(code: string): Promise<void> {
+  await runTransaction(roomRef(code), (room: RawRoom | null) => {
+    if (!room) return room
+    return {
+      ...room,
+      phase: 'design',
+      attempt: (room.attempt ?? 1) + 1,
+      readyRoles: { science: false, bus: false, flight: false, comms: false },
+    }
+  })
 }
