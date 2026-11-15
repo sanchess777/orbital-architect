@@ -150,9 +150,11 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                {INSTRUMENTS.map((inst) => {
+                {INSTRUMENTS.filter(
+                  (inst) =>
+                    inst.targets.includes(target.id) || config.instrumentIds.includes(inst.id),
+                ).map((inst) => {
                   const checked = config.instrumentIds.includes(inst.id)
-                  const validForTarget = inst.targets.includes(target.id)
                   const limitReached =
                     !checked && config.instrumentIds.length >= platform.maxInstruments
                   return (
@@ -161,9 +163,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                       className={`flex cursor-pointer flex-col justify-between rounded border p-2.5 text-xs transition ${
                         checked
                           ? 'border-cyan-500/70 bg-cyan-950/30'
-                          : !validForTarget
-                            ? 'border-slate-800/60 bg-slate-950/30 opacity-45'
-                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                       } ${!canEdit || limitReached ? 'cursor-not-allowed' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -171,7 +171,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={!canEdit || (!checked && (limitReached || !validForTarget))}
+                          disabled={!canEdit || (!checked && limitReached)}
                           onChange={() => toggleInstrument(inst.id)}
                           className="mt-0.5 accent-cyan-500"
                         />
@@ -399,7 +399,9 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                 {t.secRocket}
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {ROCKETS.map((rk) => {
+                {ROCKETS.filter(
+                  (rk) => rk.capKg[target.id] > 0 || config.rocketId === rk.id,
+                ).map((rk) => {
                   const cap = rk.capKg[target.id]
                   return (
                     <button
@@ -410,9 +412,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                       className={`rounded border p-2.5 text-left text-xs transition ${
                         config.rocketId === rk.id
                           ? 'border-cyan-400 bg-cyan-950/40'
-                          : cap === 0
-                            ? 'border-slate-800/60 bg-slate-950/30 opacity-50'
-                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                       } disabled:cursor-not-allowed`}
                     >
                       <div className="flex justify-between font-semibold text-slate-100">
@@ -516,7 +516,9 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                 {t.secRadio}
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {RADIOS.map((rd) => {
+                {RADIOS.filter(
+                  (rd) => rd.rateMbps[target.id] > 0 || config.radioId === rd.id,
+                ).map((rd) => {
                   const rate = rd.rateMbps[target.id]
                   return (
                     <button
@@ -527,9 +529,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                       className={`rounded border p-2.5 text-left text-xs transition ${
                         config.radioId === rd.id
                           ? 'border-cyan-400 bg-cyan-950/40'
-                          : rate === 0
-                            ? 'border-slate-800/60 bg-slate-950/30 opacity-50'
-                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                       } disabled:cursor-not-allowed`}
                     >
                       <div className="flex justify-between font-semibold text-slate-100">
