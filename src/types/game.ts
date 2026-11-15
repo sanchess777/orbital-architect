@@ -6,7 +6,7 @@ export interface LocalizedText {
 }
 
 export type PlayerRole = 'science' | 'bus' | 'flight' | 'comms'
-export type TargetId = 'leo' | 'geo' | 'moon' | 'mars'
+export type TargetId = 'leo' | 'moon' | 'mars'
 export type RoomPhase = 'lobby' | 'design' | 'report'
 export type DutyCycleId = 'eco' | 'normal' | 'max'
 export type GroundStationCount = 1 | 2 | 3

@@ -68,7 +68,7 @@ const en = {
   metricRisk: 'Failure Risk',
   reserveLabel: 'Reserve',
 
-  orbitSchemaTitle: 'Orbital & Link Geometry',
+  orbitSchemaTitle: 'Orbital & Link Parameters',
   eclipseZone: 'Eclipse Shadow',
   groundCoverage: 'Station Contact',
   signalDelayLabel: 'One-way Delay',
@@ -216,7 +216,7 @@ const uk: Dict = {
   metricRisk: 'Ризик провалу',
   reserveLabel: 'Резерв',
 
-  orbitSchemaTitle: 'Схема орбіти та зони зв’язку',
+  orbitSchemaTitle: 'Параметри орбіти та зв’язку',
   eclipseZone: 'Тінь планети',
   groundCoverage: 'Зона станцій',
   signalDelayLabel: 'Затримка сигналу',

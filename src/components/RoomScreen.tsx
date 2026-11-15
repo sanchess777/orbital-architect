@@ -117,7 +117,7 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
             </h2>
             <p className="mt-1 text-xs text-slate-400">{t.selectTargetHint}</p>
 
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
               {TARGET_ORDER.map((tid) => {
                 const trg = TARGETS[tid]
                 const active = selectedTarget === tid
@@ -133,9 +133,9 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
                         : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                     } disabled:cursor-default`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-slate-100">{pick(trg.name)}</span>
-                      <span className="rounded bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-cyan-300">
+                      <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-cyan-300">
                         {trg.bClassM} M$
                       </span>
                     </div>

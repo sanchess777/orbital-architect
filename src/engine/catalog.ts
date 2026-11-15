@@ -16,7 +16,7 @@ import type {
   TargetId,
 } from '../types/game'
 
-export const TARGET_ORDER: TargetId[] = ['leo', 'geo', 'moon', 'mars']
+export const TARGET_ORDER: TargetId[] = ['leo', 'moon', 'mars']
 
 export const TARGETS: Record<TargetId, MissionTarget> = {
   leo: {
@@ -72,68 +72,6 @@ export const TARGETS: Record<TargetId, MissionTarget> = {
         description: {
           en: 'Unencrypted telemetry links over ground stations are vulnerable to command spoofing.',
           uk: 'Відкритий радіоканал над наземними станціями вразливий до підміни команд.',
-        },
-        mitigationHint: {
-          en: 'Enable encrypted communications channel.',
-          uk: 'Увімкніть шифрований канал зв’язку.',
-        },
-      },
-    ],
-  },
-
-  geo: {
-    id: 'geo',
-    name: { en: 'Geostationary Orbit (GEO)', uk: 'Геостаціонарна орбіта (GEO)' },
-    injectionOrbit: { en: 'GTO Transfer', uk: 'Перехідна орбіта GTO' },
-    dvKmS: 1.55,
-    dvBreakdown: { en: '1.50 apogee burn + 0.05 corrections', uk: 'апогейний 1,5 + корекції 0,05' },
-    flightDays: 5,
-    distanceKm: 38000,
-    signalDelay: { en: '0.13 s', uk: '0,13 с' },
-    orbitPeriodMin: 1436,
-    eclipseMin: 72,
-    solarFlux: 1.0,
-    degradationPerYear: 0.03,
-    maxDoD: 0.70,
-    earthVisFrac: 1.0,
-    stationCov: [1.0, 1.0, 1.0],
-    maxGapHours: [0, 0, 0],
-    skDvKmSPerYear: 0.05,
-    tNomMonths: 24,
-    bClassM: 350,
-    tBaseMonths: 20,
-    tMaxMonths: 42,
-    windows: 'any',
-    bgRiskTransit: 0.005,
-    bgRiskIns: 0.03,
-    sMin: 20,
-    sRef: 70,
-    rMax: 0.20,
-    rTeamM: 1.5,
-    rOpsM: 0.6,
-    analog: {
-      en: 'Geostationary Weather Satellite (GOES-class)',
-      uk: 'Геостаціонарний метеосупутник (класу GOES)',
-    },
-    threats: [
-      {
-        id: 'solar_flare',
-        name: { en: 'Geomagnetic Storm & Solar Flare', uk: 'Сонячний спалах та радіаційний шторм' },
-        description: {
-          en: 'Outer radiation belt exposure at 36,000 km causes single-event upsets in avionics.',
-          uk: 'Висока радіація на висоті 36 000 км викликає збої неекранованої електроніки.',
-        },
-        mitigationHint: {
-          en: 'Install radiation-hardened flight computer.',
-          uk: 'Встановіть радіаційно стійкий комп’ютер.',
-        },
-      },
-      {
-        id: 'cyber_attack',
-        name: { en: 'Relay Hijack Attempt', uk: 'Спроба перехоплення ретранслятора' },
-        description: {
-          en: 'Continuous visibility makes GEO payloads a high-value target for RF intrusion.',
-          uk: 'Постійна видимість робить апарат на GEO ціллю для кібератаки на канал.',
         },
         mitigationHint: {
           en: 'Enable encrypted communications channel.',
@@ -278,7 +216,7 @@ export const PLATFORMS: PlatformSpec[] = [
     coreWatts: 25,
     costM: 12,
     devMonths: 2,
-    targets: ['leo', 'geo', 'moon', 'mars'],
+    targets: ['leo', 'moon', 'mars'],
   },
   {
     id: 'medium',
@@ -289,7 +227,7 @@ export const PLATFORMS: PlatformSpec[] = [
     coreWatts: 60,
     costM: 35,
     devMonths: 5,
-    targets: ['leo', 'geo', 'moon', 'mars'],
+    targets: ['leo', 'moon', 'mars'],
   },
   {
     id: 'large',
@@ -300,7 +238,7 @@ export const PLATFORMS: PlatformSpec[] = [
     coreWatts: 120,
     costM: 80,
     devMonths: 9,
-    targets: ['leo', 'geo', 'moon', 'mars'],
+    targets: ['leo', 'moon', 'mars'],
   },
 ]
 
@@ -308,7 +246,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
   {
     id: 'cam_ms',
     name: { en: 'Multispectral Camera', uk: 'Мультиспектральна камера' },
-    targets: ['leo', 'geo'],
+    targets: ['leo'],
     massKg: 25,
     powerWatts: 40,
     dataGbitPerDay: 60,
@@ -320,7 +258,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
   {
     id: 'radiometer',
     name: { en: 'Atmospheric Radiometer (Clouds, CO₂)', uk: 'Радіометр (хмари, CO₂)' },
-    targets: ['leo', 'geo'],
+    targets: ['leo'],
     massKg: 18,
     powerWatts: 30,
     dataGbitPerDay: 2,
@@ -416,7 +354,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
   {
     id: 'magneto',
     name: { en: 'Fluxgate Magnetometer', uk: 'Магнітометр' },
-    targets: ['leo', 'geo', 'moon', 'mars'],
+    targets: ['leo', 'moon', 'mars'],
     massKg: 5,
     powerWatts: 3,
     dataGbitPerDay: 0.5,
@@ -428,7 +366,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
   {
     id: 'particle',
     name: { en: 'Charged Particle Detector', uk: 'Детектор частинок' },
-    targets: ['geo', 'moon', 'mars'],
+    targets: ['moon', 'mars'],
     massKg: 8,
     powerWatts: 10,
     dataGbitPerDay: 1,
@@ -489,7 +427,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'micro',
     name: { en: 'Micro Launcher', uk: 'Мікроносій' },
-    capKg: { leo: 300, geo: 0, moon: 0, mars: 0 },
+    capKg: { leo: 300, moon: 0, mars: 0 },
     costM: 8,
     reliability: 0.92,
     trl: 9,
@@ -498,7 +436,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'light',
     name: { en: 'Light Launcher', uk: 'Легкий носій' },
-    capKg: { leo: 1200, geo: 0, moon: 0, mars: 0 },
+    capKg: { leo: 1200, moon: 0, mars: 0 },
     costM: 20,
     reliability: 0.94,
     trl: 9,
@@ -507,7 +445,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'medium',
     name: { en: 'Medium Heritage Launcher', uk: 'Середній перевірений' },
-    capKg: { leo: 5000, geo: 2200, moon: 1500, mars: 900 },
+    capKg: { leo: 5000, moon: 1500, mars: 900 },
     costM: 60,
     reliability: 0.97,
     trl: 9,
@@ -516,7 +454,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'heavy',
     name: { en: 'Heavy Heritage Launcher', uk: 'Важкий перевірений' },
-    capKg: { leo: 15000, geo: 6000, moon: 4500, mars: 3000 },
+    capKg: { leo: 15000, moon: 4500, mars: 3000 },
     costM: 170,
     reliability: 0.98,
     trl: 9,
@@ -525,7 +463,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'newreuse',
     name: { en: 'New Reusable Launcher', uk: 'Новий багаторазовий' },
-    capKg: { leo: 20000, geo: 8000, moon: 6000, mars: 4000 },
+    capKg: { leo: 20000, moon: 6000, mars: 4000 },
     costM: 100,
     reliability: 0.85,
     trl: 5,
@@ -534,7 +472,7 @@ export const ROCKETS: RocketSpec[] = [
   {
     id: 'superheavy',
     name: { en: 'Super-Heavy "2032"', uk: 'Надважкий «2032»' },
-    capKg: { leo: 80000, geo: 35000, moon: 30000, mars: 20000 },
+    capKg: { leo: 80000, moon: 30000, mars: 20000 },
     costM: 250,
     reliability: 0.80,
     trl: 3,
@@ -551,7 +489,7 @@ export const ENGINES: EngineSpec[] = [
     powerWatts: 0,
     costM: 2,
     trl: 9,
-    extraFlightDays: { leo: 0, geo: 0, moon: 0, mars: 0 },
+    extraFlightDays: { leo: 0, moon: 0, mars: 0 },
   },
   {
     id: 'bi',
@@ -561,7 +499,7 @@ export const ENGINES: EngineSpec[] = [
     powerWatts: 0,
     costM: 8,
     trl: 9,
-    extraFlightDays: { leo: 0, geo: 0, moon: 0, mars: 0 },
+    extraFlightDays: { leo: 0, moon: 0, mars: 0 },
   },
   {
     id: 'ion',
@@ -571,7 +509,7 @@ export const ENGINES: EngineSpec[] = [
     powerWatts: 1500,
     costM: 25,
     trl: 7,
-    extraFlightDays: { leo: 0, geo: 100, moon: 90, mars: 60 },
+    extraFlightDays: { leo: 0, moon: 90, mars: 60 },
   },
 ]
 
@@ -663,7 +601,7 @@ export const RADIOS: RadioSpec[] = [
     rfWatts: 5,
     powerWatts: 15,
     massKg: 1.5,
-    rateMbps: { leo: 1, geo: 0.02, moon: 0.001, mars: 0 },
+    rateMbps: { leo: 1, moon: 0.001, mars: 0 },
     pointingDeg: 10,
     costM: 1,
     trl: 9,
@@ -674,7 +612,7 @@ export const RADIOS: RadioSpec[] = [
     rfWatts: 10,
     powerWatts: 30,
     massKg: 6,
-    rateMbps: { leo: 10, geo: 2, moon: 0.5, mars: 0 },
+    rateMbps: { leo: 10, moon: 0.5, mars: 0 },
     pointingDeg: 5,
     costM: 4,
     trl: 9,
@@ -685,7 +623,7 @@ export const RADIOS: RadioSpec[] = [
     rfWatts: 20,
     powerWatts: 60,
     massKg: 25,
-    rateMbps: { leo: 150, geo: 40, moon: 12, mars: 0.5 },
+    rateMbps: { leo: 150, moon: 12, mars: 0.5 },
     pointingDeg: 0.5,
     costM: 15,
     trl: 9,
@@ -696,7 +634,7 @@ export const RADIOS: RadioSpec[] = [
     rfWatts: 35,
     powerWatts: 120,
     massKg: 45,
-    rateMbps: { leo: 600, geo: 160, moon: 50, mars: 2.5 },
+    rateMbps: { leo: 600, moon: 50, mars: 2.5 },
     pointingDeg: 0.1,
     costM: 35,
     trl: 7,
@@ -780,33 +718,6 @@ export function createDefaultConfig(targetId: TargetId): MissionConfig {
       memoryId: 'm128',
       processorId: 'proc_m',
       groundStations: 2,
-      optRedundancy: false,
-      optEncryption: true,
-    }
-  }
-  if (targetId === 'geo') {
-    return {
-      targetId: 'geo',
-      instrumentIds: ['cam_ms', 'radiometer'],
-      dutyCycle: 'normal',
-      platformId: 'medium',
-      adcsId: 'adcs_p',
-      panelId: 'gaas',
-      panelAreaM2: 3.0,
-      batteryId: 'li',
-      batteryKwh: 1.0,
-      optRadHard: true,
-      optShield: false,
-      orbitConfirmed: true,
-      rocketId: 'medium',
-      engineId: 'bi',
-      stationKeepingYears: 2.0,
-      extraTestMonths: 2,
-      acceptHighRisk: false,
-      radioId: 'x',
-      memoryId: 'm128',
-      processorId: 'proc_m',
-      groundStations: 1,
       optRedundancy: false,
       optEncryption: true,
     }
