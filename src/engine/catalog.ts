@@ -7,6 +7,7 @@ import type {
   InstrumentSpec,
   LocalizedText,
   MemorySpec,
+  MissionConfig,
   MissionTarget,
   PlatformSpec,
   ProcessorSpec,
@@ -583,4 +584,27 @@ export const DUTY_CYCLE_FACTOR: Record<DutyCycleId, number> = {
   eco: 1.0,
   normal: 1.0,
   max: 1.0,
+}
+
+export function createDefaultConfig(targetId: TargetId = 'leo'): MissionConfig {
+  return {
+    targetId,
+    platformId: '',
+    instrumentIds: [],
+    panelId: '',
+    panelAreaM2: 0,
+    batteryId: '',
+    batteryKwh: 0,
+    optShield: false,
+    optRedundancy: false,
+    rocketId: 'rk_light',
+    adcsId: '',
+    engineId: '',
+    radioId: '',
+    memoryId: '',
+    processorId: '',
+    groundStations: 1,
+    optRadHard: false,
+    optEncryption: false,
+  }
 }
