@@ -40,7 +40,8 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
 
   const config = room.config
   const target = TARGETS[config.targetId]
-  const platform = PLATFORMS.find((p) => p.id === config.platformId) ?? PLATFORMS[0]
+  const platform = PLATFORMS.find((p) => p.id === config.platformId) ?? null
+  const maxInstruments = platform ? platform.maxInstruments : 0
 
   const ownerId = room.roleOwners[activeRole]
   const ownerName = room.players.find((p) => p.id === ownerId)?.name ?? '—'
@@ -67,7 +68,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
     const exists = config.instrumentIds.includes(instId)
     if (exists) {
       patch({ instrumentIds: config.instrumentIds.filter((id) => id !== instId) })
-    } else if (config.instrumentIds.length < platform.maxInstruments) {
+    } else if (maxInstruments === 0 || config.instrumentIds.length < maxInstruments) {
       patch({ instrumentIds: [...config.instrumentIds, instId] })
     }
   }
@@ -134,13 +135,15 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         </div>
 
+        {/* ==================== НАУКОВИЙ КЕРІВНИК ==================== */}
         {activeRole === 'science' && (
           <div className="space-y-4">
             <div>
               <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
                 <span>
-                  {t.secInstruments} {platform.maxInstruments}) · {config.instrumentIds.length}/
-                  {platform.maxInstruments}
+                  {t.secInstruments}{' '}
+                  {maxInstruments > 0 ? `${maxInstruments}) · ` : '—) · '}
+                  {config.instrumentIds.length}/{maxInstruments || '—'}
                 </span>
                 {activeSynergies.length > 0 && (
                   <span className="text-emerald-400">
@@ -156,7 +159,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                 ).map((inst) => {
                   const checked = config.instrumentIds.includes(inst.id)
                   const limitReached =
-                    !checked && config.instrumentIds.length >= platform.maxInstruments
+                    !checked && maxInstruments > 0 && config.instrumentIds.length >= maxInstruments
                   return (
                     <label
                       key={inst.id}
@@ -171,7 +174,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={!canEdit || (!checked && limitReached)}
+                          disabled={!canEdit || limitReached}
                           onChange={() => toggleInstrument(inst.id)}
                           className="mt-0.5 accent-cyan-500"
                         />
@@ -180,7 +183,9 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                         <span className="text-cyan-300">+{inst.sciencePoints} sci</span>
                         <span>{inst.massKg} kg</span>
                         <span>{inst.powerWatts} W</span>
-                        <span>{inst.dataGbitPerDay} Gb/d</span>
+                        <span>
+                          {inst.dataGbitPerHour} {t.gbitHourUnit}
+                        </span>
                         <span>{inst.costM} M$</span>
                         <span>TRL {inst.trl}</span>
                         <span>≤{inst.pointingDeg}°</span>
@@ -222,11 +227,17 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
+        {/* ==================== ІНЖЕНЕР АПАРАТА ==================== */}
         {activeRole === 'bus' && (
           <div className="space-y-4">
             <div>
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secPlatform}
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secPlatform}</span>
+                {!config.platformId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 {PLATFORMS.map((p) => (
@@ -243,7 +254,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                   >
                     <div className="font-semibold text-slate-100">{pick(p.name)}</div>
                     <div className="mt-1 text-[11px] text-slate-400">
-                      Max {p.maxInstruments} inst · {p.coreWatts} W · {p.costM} M$
+                      Max {p.maxInstruments} inst · {p.ownMassKg} kg · {p.coreWatts} W · {p.costM} M$
                     </div>
                   </button>
                 ))}
@@ -251,8 +262,13 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
             </div>
 
             <div>
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secAdcs}
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secAdcs}</span>
+                {!config.adcsId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 {ADCS_LIST.map((a) => (
@@ -277,8 +293,13 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
             </div>
 
             <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secPanels}
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secPanels}</span>
+                {!config.panelId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 {SOLAR_PANELS.map((sp) => (
@@ -286,7 +307,12 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                     key={sp.id}
                     type="button"
                     disabled={!canEdit}
-                    onClick={() => patch({ panelId: sp.id })}
+                    onClick={() =>
+                      patch({
+                        panelId: sp.id,
+                        panelAreaM2: config.panelAreaM2 > 0 ? config.panelAreaM2 : 1.0,
+                      })
+                    }
                     className={`rounded border p-2 text-left text-xs transition ${
                       config.panelId === sp.id
                         ? 'border-cyan-400 bg-cyan-950/40'
@@ -309,20 +335,25 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                 </div>
                 <input
                   type="range"
-                  min={0.5}
+                  min={0}
                   max={25}
                   step={0.5}
-                  disabled={!canEdit}
+                  disabled={!canEdit || !config.panelId}
                   value={config.panelAreaM2}
                   onChange={(e) => patch({ panelAreaM2: Number(e.target.value) })}
-                  className="mt-1 w-full accent-cyan-500"
+                  className="mt-1 w-full accent-cyan-500 disabled:opacity-40"
                 />
               </div>
             </div>
 
             <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secBattery}
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secBattery}</span>
+                {!config.batteryId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 {BATTERIES.map((b) => (
@@ -330,7 +361,12 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                     key={b.id}
                     type="button"
                     disabled={!canEdit}
-                    onClick={() => patch({ batteryId: b.id })}
+                    onClick={() =>
+                      patch({
+                        batteryId: b.id,
+                        batteryKwh: config.batteryKwh > 0 ? config.batteryKwh : 0.2,
+                      })
+                    }
                     className={`rounded border p-2 text-left text-xs transition ${
                       config.batteryId === b.id
                         ? 'border-cyan-400 bg-cyan-950/40'
@@ -353,13 +389,13 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                 </div>
                 <input
                   type="range"
-                  min={0.1}
+                  min={0}
                   max={10}
                   step={0.1}
-                  disabled={!canEdit}
+                  disabled={!canEdit || !config.batteryId}
                   value={config.batteryKwh}
                   onChange={(e) => patch({ batteryKwh: Number(e.target.value) })}
-                  className="mt-1 w-full accent-cyan-500"
+                  className="mt-1 w-full accent-cyan-500 disabled:opacity-40"
                 />
               </div>
             </div>
@@ -392,13 +428,14 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
+        {/* ==================== ІНЖЕНЕР ПОЛЬОТУ ==================== */}
         {activeRole === 'flight' && (
           <div className="space-y-4">
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secRocket}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 {ROCKETS.filter(
                   (rk) => rk.capKg[target.id] > 0 || config.rocketId === rk.id,
                 ).map((rk) => {
@@ -415,9 +452,9 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                           : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                       } disabled:cursor-not-allowed`}
                     >
-                      <div className="flex justify-between font-semibold text-slate-100">
+                      <div className="flex justify-between gap-2 font-semibold text-slate-100">
                         <span>{pick(rk.name)}</span>
-                        <span className="text-cyan-300">{cap > 0 ? `${cap} kg` : 'N/A'}</span>
+                        <span className="shrink-0 text-cyan-300">{cap > 0 ? `${cap} kg` : 'N/A'}</span>
                       </div>
                       <div className="mt-1 text-[11px] text-slate-400">
                         {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(0)}% · TRL {rk.trl}
@@ -429,69 +466,46 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
             </div>
 
             <div>
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secEngine}
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>
+                  {t.secEngine}{' '}
+                  <span className="font-normal normal-case text-slate-400">
+                    ({t.optionalLabel})
+                  </span>
+                </span>
+                {!config.engineId && (
+                  <span className="text-[11px] font-normal normal-case text-slate-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
-                {ENGINES.map((en) => (
-                  <button
-                    key={en.id}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => patch({ engineId: en.id })}
-                    className={`rounded border p-2.5 text-left text-xs transition ${
-                      config.engineId === en.id
-                        ? 'border-cyan-400 bg-cyan-950/40'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    <div className="font-semibold text-slate-100">{pick(en.name)}</div>
-                    <div className="mt-1 text-[11px] text-slate-400">
-                      Isp {en.ispSec}s · {en.dryMassKg} kg · {en.powerWatts} W · {en.costM} M$
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-3 rounded border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-2">
-              <div>
-                <div className="flex justify-between text-xs text-slate-300">
-                  <span>{t.skYearsLabel}</span>
-                  <span className="font-bold tabular-nums text-cyan-300">
-                    {config.stationKeepingYears.toFixed(1)} yr ({(config.stationKeepingYears * 12).toFixed(0)}{' '}
-                    {t.monthsUnit})
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={5}
-                  step={0.5}
-                  disabled={!canEdit}
-                  value={config.stationKeepingYears}
-                  onChange={(e) => patch({ stationKeepingYears: Number(e.target.value) })}
-                  className="mt-1 w-full accent-cyan-500"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-slate-300">
-                  <span>{t.extraTestsLabel}</span>
-                  <span className="font-bold tabular-nums text-cyan-300">
-                    +{config.extraTestMonths} {t.monthsUnit}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={12}
-                  step={1}
-                  disabled={!canEdit}
-                  value={config.extraTestMonths}
-                  onChange={(e) => patch({ extraTestMonths: Number(e.target.value) })}
-                  className="mt-1 w-full accent-cyan-500"
-                />
+                {ENGINES.map((en) => {
+                  const selected = config.engineId === en.id
+                  return (
+                    <button
+                      key={en.id}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => patch({ engineId: selected ? '' : en.id })}
+                      className={`rounded border p-2.5 text-left text-xs transition ${
+                        selected
+                          ? 'border-cyan-400 bg-cyan-950/40'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                      } disabled:cursor-not-allowed`}
+                    >
+                      <div className="flex justify-between gap-2 font-semibold text-slate-100">
+                        <span>{pick(en.name)}</span>
+                        <span className="shrink-0 text-cyan-300">
+                          ~{en.lifeYears} {t.yearsUnit}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        {en.massKg} kg · {en.powerWatts} W · {en.costM} M$
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -508,17 +522,23 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
+        {/* ==================== ЗВ'ЯЗКІВЕЦЬ ==================== */}
         {activeRole === 'comms' && (
           <div className="space-y-4">
             <div>
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secRadio}
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secRadio}</span>
+                {!config.radioId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 {RADIOS.filter(
-                  (rd) => rd.rateMbps[target.id] > 0 || config.radioId === rd.id,
+                  (rd) => rd.rateGbitPerHour[target.id] > 0 || config.radioId === rd.id,
                 ).map((rd) => {
-                  const rate = rd.rateMbps[target.id]
+                  const rate = rd.rateGbitPerHour[target.id]
                   return (
                     <button
                       key={rd.id}
@@ -531,9 +551,11 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                           : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                       } disabled:cursor-not-allowed`}
                     >
-                      <div className="flex justify-between font-semibold text-slate-100">
+                      <div className="flex justify-between gap-2 font-semibold text-slate-100">
                         <span>{pick(rd.name)}</span>
-                        <span className="text-cyan-300">{rate > 0 ? `${rate} Mbps` : 'N/A'}</span>
+                        <span className="shrink-0 text-cyan-300">
+                          {rate > 0 ? `${rate} ${t.gbitHourUnit}` : 'N/A'}
+                        </span>
                       </div>
                       <div className="mt-1 text-[11px] text-slate-400">
                         {rd.massKg} kg · {rd.powerWatts} W · {rd.costM} M$ · ≤{rd.pointingDeg}°
@@ -545,8 +567,13 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
             </div>
 
             <div>
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                {t.secMemory}
+              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <span>{t.secMemory}</span>
+                {!config.memoryId && (
+                  <span className="text-[11px] font-normal normal-case text-amber-400">
+                    {t.notSelectedLabel}
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {MEMORIES.map((m) => (
@@ -572,56 +599,72 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  {t.secProcessor}
+                <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <span>
+                    {t.secProcessor}{' '}
+                    <span className="font-normal normal-case text-slate-400">
+                      ({t.optionalLabel})
+                    </span>
+                  </span>
                 </div>
                 <div className="space-y-1.5">
-                  {PROCESSORS.map((pr) => (
-                    <button
-                      key={pr.id}
-                      type="button"
-                      disabled={!canEdit}
-                      onClick={() => patch({ processorId: pr.id })}
-                      className={`flex w-full items-center justify-between rounded border px-2.5 py-2 text-xs transition ${
-                        config.processorId === pr.id
-                          ? 'border-cyan-400 bg-cyan-950/40'
-                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                      } disabled:cursor-not-allowed`}
-                    >
-                      <span className="font-medium text-slate-100">{pick(pr.name)}</span>
-                      <span className="text-[11px] text-slate-400">
-                        {pr.massKg}kg · {pr.costM}M$
-                      </span>
-                    </button>
-                  ))}
+                  {PROCESSORS.map((pr) => {
+                    const selected = config.processorId === pr.id
+                    return (
+                      <button
+                        key={pr.id}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => patch({ processorId: selected ? '' : pr.id })}
+                        className={`flex w-full items-center justify-between rounded border px-2.5 py-2 text-xs transition ${
+                          selected
+                            ? 'border-cyan-400 bg-cyan-950/40'
+                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                        } disabled:cursor-not-allowed`}
+                      >
+                        <span className="font-medium text-slate-100">{pick(pr.name)}</span>
+                        <span className="text-[11px] text-slate-400">
+                          {pr.massKg}kg · {pr.costM}M$
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               <div>
-                <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  {t.secStations}
+                <div className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <span>{t.secStations}</span>
+                  {config.groundStations === 0 && (
+                    <span className="text-[11px] font-normal normal-case text-amber-400">
+                      0 / 3
+                    </span>
+                  )}
                 </div>
                 <div className="space-y-1.5">
-                  {([1, 2, 3] as GroundStationCount[]).map((cnt) => (
-                    <button
-                      key={cnt}
-                      type="button"
-                      disabled={!canEdit}
-                      onClick={() => patch({ groundStations: cnt })}
-                      className={`flex w-full items-center justify-between rounded border px-2.5 py-2 text-xs transition ${
-                        config.groundStations === cnt
-                          ? 'border-cyan-400 bg-cyan-950/40'
-                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                      } disabled:cursor-not-allowed`}
-                    >
-                      <span className="font-medium text-slate-100">
-                        {cnt} · {t.groundStationLabel}
-                      </span>
-                      <span className="text-[11px] text-cyan-300">
-                        {GROUND_STATION_COSTS_M[cnt]} M$
-                      </span>
-                    </button>
-                  ))}
+                  {([1, 2, 3] as GroundStationCount[]).map((cnt) => {
+                    const selected = config.groundStations === cnt
+                    return (
+                      <button
+                        key={cnt}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => patch({ groundStations: selected ? 0 : cnt })}
+                        className={`flex w-full items-center justify-between rounded border px-2.5 py-2 text-xs transition ${
+                          selected
+                            ? 'border-cyan-400 bg-cyan-950/40'
+                            : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                        } disabled:cursor-not-allowed`}
+                      >
+                        <span className="font-medium text-slate-100">
+                          {cnt} · {t.groundStationLabel}
+                        </span>
+                        <span className="text-[11px] text-cyan-300">
+                          {GROUND_STATION_COSTS_M[cnt]} M$
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>

@@ -22,23 +22,29 @@ export default function OrbitVisualizer({ config, report }: OrbitVisualizerProps
         </span>
       </div>
 
-      {/* Телеметрія орбіти */}
+      {/* Ключові часові параметри орбіти та зв'язку */}
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-1.5">
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
+          <div className="text-slate-400">{t.maxEclipseLabel}</div>
+          <div className="mt-0.5 font-semibold text-amber-300">
+            {target.maxEclipseHours} {t.hoursUnit}
+          </div>
+        </div>
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
+          <div className="text-slate-400">{t.contactHoursLabel}</div>
+          <div className="mt-0.5 font-semibold text-cyan-300">
+            {report.contactHoursPerDay.toFixed(1)} {t.hoursPerDayUnit}
+          </div>
+        </div>
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
+          <div className="text-slate-400">{t.maxBlackoutLabel}</div>
+          <div className="mt-0.5 font-semibold text-slate-200">
+            {report.maxBlackoutHours} {t.hoursUnit}
+          </div>
+        </div>
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
           <div className="text-slate-400">{t.signalDelayLabel}</div>
-          <div className="font-semibold text-slate-200">{pick(target.signalDelay)}</div>
-        </div>
-        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-1.5">
-          <div className="text-slate-400">{t.orbitalPeriodLabel}</div>
-          <div className="font-semibold text-slate-200">{target.orbitPeriodMin} min</div>
-        </div>
-        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-1.5">
-          <div className="text-slate-400">{t.eclipseZone}</div>
-          <div className="font-semibold text-amber-300">{target.eclipseMin} min</div>
-        </div>
-        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-1.5">
-          <div className="text-slate-400">{t.groundCoverage}</div>
-          <div className="font-semibold text-cyan-300">{config.groundStations} st.</div>
+          <div className="mt-0.5 font-semibold text-slate-200">{pick(target.signalDelay)}</div>
         </div>
       </div>
 

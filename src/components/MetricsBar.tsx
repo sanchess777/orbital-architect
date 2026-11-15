@@ -9,7 +9,7 @@ interface MetricCardProps {
   label: string
   value: string
   sub: string
-  ratio: number // 0..1+ (де >1 означає перевищення)
+  ratio: number
   status: 'ok' | 'warn' | 'bad'
 }
 
@@ -51,33 +51,38 @@ export default function MetricsBar({ report }: MetricsBarProps) {
   const budRatio = report.budgetMaxM > 0 ? report.budgetUsedM / report.budgetMaxM : 1
   const budStatus = budRatio > 1 ? 'bad' : budRatio > 0.9 ? 'warn' : 'ok'
 
-  // 2. Маса
-  const massRatio = report.rocketLimitKg > 0 ? report.launchMassKg / report.rocketLimitKg : 1.5
-  const massStatus = massRatio > 1 ? 'bad' : massRatio > 0.9 ? 'warn' : 'ok'
+  // 2. Вага апарата vs ракета
+  const massRatio = report.rocketLimitKg > 0 ? report.spacecraftMassKg / report.rocketLimitKg : 1.5
+  const g1Ok = report.gates.find((g) => g.id === 'G1')?.passed ?? false
+  const massStatus = !g1Ok ? 'bad' : massRatio > 0.9 ? 'warn' : 'ok'
 
-  // 3. Енергія (генерація проти споживання)
+  // 3. Швидкість запису інформації (Гбіт/год)
+  const recRatio = report.dataRecGbitHour > 0 ? Math.min(1, report.dataRecGbitHour / 30) : 0
+  const recStatus = report.dataRecGbitHour <= 0 ? 'bad' : 'ok'
+
+  // 4. Швидкість передачі на Землю (Гбіт/год)
+  const g5Ok = report.gates.find((g) => g.id === 'G5')?.passed ?? false
+  const downRatio =
+    report.dataGenGbitDay > 0
+      ? Math.min(1, report.dataDownlinkGbitDay / report.dataGenGbitDay)
+      : report.dataDownlinkGbitHour > 0
+        ? 1
+        : 0
+  const downStatus = !g5Ok ? 'bad' : downRatio < 1.1 ? 'warn' : 'ok'
+
+  // 5. Потужність пристроїв (Вт)
   const pwrRatio =
-    report.powerGenEolWatts > 0 ? report.powerNeedLightWatts / report.powerGenEolWatts : 1.5
+    report.powerGenWatts > 0 ? report.powerNeedWatts / report.powerGenWatts : 1.5
   const g2Ok = report.gates.find((g) => g.id === 'G2')?.passed ?? false
   const pwrStatus = !g2Ok ? 'bad' : pwrRatio > 0.9 ? 'warn' : 'ok'
 
-  // 4. Батареї
+  // 6. Ємність батареї (Вт·год)
   const batRatio =
     report.batteryCapacityWh > 0 ? report.batteryRequiredWh / report.batteryCapacityWh : 1.5
-  const batStatus = batRatio > 1 ? 'bad' : batRatio > 0.9 ? 'warn' : 'ok'
+  const g3Ok = report.gates.find((g) => g.id === 'G3')?.passed ?? false
+  const batStatus = !g3Ok ? 'bad' : batRatio > 0.9 ? 'warn' : 'ok'
 
-  // 5. Дані / Зв'язок
-  const dataRatio =
-    report.dataDownlinkGbitDay > 0
-      ? report.dataGenGbitDay / report.dataDownlinkGbitDay
-      : report.dataGenGbitDay > 0
-        ? 1.5
-        : 0
-  const g4Ok = report.gates.find((g) => g.id === 'G4')?.passed ?? false
-  const g5Ok = report.gates.find((g) => g.id === 'G5')?.passed ?? false
-  const dataStatus = !g4Ok || !g5Ok ? 'bad' : dataRatio > 0.9 ? 'warn' : 'ok'
-
-  // 6. Наука
+  // 7. Очікувана наука
   const sciRatio = report.scienceRef > 0 ? report.scienceExpected / report.scienceRef : 0
   const sciStatus =
     report.scienceInstalled < report.scienceMin
@@ -86,7 +91,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         ? 'warn'
         : 'ok'
 
-  // 7. Ризик провалу
+  // 8. Ризик провалу
   const riskRatio = report.failProbMax > 0 ? report.failProbTotal / report.failProbMax : 1
   const riskStatus =
     report.failProbTotal > report.failProbMax
@@ -96,7 +101,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         : 'ok'
 
   return (
-    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       <MetricCard
         label={t.metricBudget}
         value={`${report.budgetUsedM.toFixed(0)} / ${report.budgetMaxM.toFixed(0)} M$`}
@@ -106,36 +111,47 @@ export default function MetricsBar({ report }: MetricsBarProps) {
       />
       <MetricCard
         label={t.metricMass}
-        value={`${report.launchMassKg.toFixed(0)} / ${report.rocketLimitKg.toFixed(0)} kg`}
-        sub={`Dry: ${report.dryMassKg.toFixed(0)} / ${report.dryMassLimitKg} kg`}
+        value={`${report.spacecraftMassKg.toFixed(0)} / ${report.rocketLimitKg.toFixed(0)} kg`}
+        sub={
+          report.dryMassLimitKg > 0
+            ? `Bus max: ${report.dryMassLimitKg} kg`
+            : t.notSelectedLabel
+        }
         ratio={massRatio}
         status={massStatus}
       />
       <MetricCard
+        label={t.metricDataRec}
+        value={`${report.dataRecGbitHour.toFixed(1)} ${t.gbitHourUnit}`}
+        sub={`${report.dataGenGbitDay.toFixed(0)} Gb/24h`}
+        ratio={recRatio}
+        status={recStatus}
+      />
+      <MetricCard
+        label={t.metricDataDown}
+        value={`${report.dataDownlinkGbitHour.toFixed(1)} ${t.gbitHourUnit}`}
+        sub={`Mem: ${report.memoryCapacityGbit}/${Math.ceil(report.memoryRequiredGbit)} Gb`}
+        ratio={downRatio}
+        status={downStatus}
+      />
+      <MetricCard
         label={t.metricPower}
-        value={`${report.powerGenEolWatts.toFixed(0)} W`}
-        sub={`Load: ${report.powerNeedLightWatts.toFixed(0)} W`}
+        value={`${report.powerGenWatts.toFixed(0)} / ${report.powerNeedWatts.toFixed(0)} W`}
+        sub={`Gen / Load`}
         ratio={pwrRatio}
         status={pwrStatus}
       />
       <MetricCard
         label={t.metricBattery}
         value={`${report.batteryCapacityWh.toFixed(0)} Wh`}
-        sub={`Req: ${report.batteryRequiredWh.toFixed(0)} Wh`}
+        sub={`Req: ${Math.ceil(report.batteryRequiredWh)} Wh`}
         ratio={batRatio}
         status={batStatus}
       />
       <MetricCard
-        label={t.metricData}
-        value={`${report.dataDownlinkGbitDay.toFixed(0)} Gb/d`}
-        sub={`Gen: ${report.dataGenGbitDay.toFixed(0)} · Mem: ${report.memoryCapacityGbit} Gb`}
-        ratio={Math.min(1.2, dataRatio)}
-        status={dataStatus}
-      />
-      <MetricCard
         label={t.metricScience}
         value={`${report.scienceExpected.toFixed(1)} pts`}
-        sub={`Inst: ${report.scienceInstalled.toFixed(0)} (min ${report.scienceMin}) · ${report.lifeMonths.toFixed(0)}/${report.nominalMonths}${t.monthsUnit}`}
+        sub={`Inst: ${report.scienceInstalled.toFixed(0)} (min ${report.scienceMin})`}
         ratio={sciRatio}
         status={sciStatus}
       />

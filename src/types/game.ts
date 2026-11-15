@@ -9,7 +9,7 @@ export type PlayerRole = 'science' | 'bus' | 'flight' | 'comms'
 export type TargetId = 'leo' | 'moon' | 'mars'
 export type RoomPhase = 'lobby' | 'design' | 'report'
 export type DutyCycleId = 'eco' | 'normal' | 'max'
-export type GroundStationCount = 1 | 2 | 3
+export type GroundStationCount = 0 | 1 | 2 | 3
 
 export type JoinError = 'notFound' | 'full' | 'generic'
 
@@ -28,14 +28,11 @@ export interface MissionConfig {
   batteryKwh: number
   optRadHard: boolean
   optShield: boolean
-  // Flight Dynamics (Балістик)
-  orbitConfirmed: boolean
+  // Flight Engineer (Інженер польоту)
   rocketId: string
   engineId: string
-  stationKeepingYears: number
-  extraTestMonths: number
   acceptHighRisk: boolean
-  // Comms & Ops (Зв'язок і ЦУП)
+  // Comms Officer (Зв'язківець)
   radioId: string
   memoryId: string
   processorId: string
@@ -59,7 +56,6 @@ export interface RawRoom {
   createdAt: number
   players?: Record<string, RawPlayer>
   claims?: Partial<Record<PlayerRole, string>>
-  // Ігровий стан місії
   phase?: RoomPhase
   attempt?: number
   config?: MissionConfig
@@ -104,32 +100,22 @@ export interface MissionTarget {
   name: LocalizedText
   goal: LocalizedText
   injectionOrbit: LocalizedText
-  dvKmS: number
-  dvBreakdown: LocalizedText
   flightDays: number
-  distanceKm: number
   signalDelay: LocalizedText
-  orbitPeriodMin: number
-  eclipseMin: number
   solarFlux: number
-  degradationPerYear: number
-  maxDoD: number
-  earthVisFrac: number
-  stationCov: [number, number, number]
-  maxGapHours: [number, number, number]
-  skDvKmSPerYear: number
+  /** Найдовший безперервний час у тіні (год), на який має вистачити батареї */
+  maxEclipseHours: number
+  /** Годин зв'язку із Землею на добу для 0, 1, 2, 3 наземних станцій */
+  contactHoursByStations: [number, number, number, number]
+  /** Найдовша пауза без зв'язку (год) для 0, 1, 2, 3 наземних станцій */
+  maxBlackoutHoursByStations: [number, number, number, number]
   tNomMonths: number
   bClassM: number
-  tBaseMonths: number
-  tMaxMonths: number
-  windows: 'any' | 'monthly' | number[]
   bgRiskTransit: number
   bgRiskIns: number
   sMin: number
   sRef: number
   rMax: number
-  rTeamM: number
-  rOpsM: number
   analog: LocalizedText
   threats: [TargetThreat, TargetThreat]
 }
@@ -142,7 +128,6 @@ export interface PlatformSpec {
   ownMassKg: number
   coreWatts: number
   costM: number
-  devMonths: number
   targets: TargetId[]
 }
 
@@ -152,7 +137,7 @@ export interface InstrumentSpec {
   targets: TargetId[]
   massKg: number
   powerWatts: number
-  dataGbitPerDay: number
+  dataGbitPerHour: number
   sciencePoints: number
   costM: number
   trl: number
@@ -167,18 +152,16 @@ export interface RocketSpec {
   costM: number
   reliability: number
   trl: number
-  availableFromMonth: number
 }
 
 export interface EngineSpec {
   id: string
   name: LocalizedText
-  ispSec: number
-  dryMassKg: number
+  massKg: number
   powerWatts: number
   costM: number
+  lifeYears: number
   trl: number
-  extraFlightDays: Record<TargetId, number>
 }
 
 export interface AdcsSpec {
@@ -212,10 +195,9 @@ export interface RadioSpec {
   id: string
   name: LocalizedText
   targets: TargetId[]
-  rfWatts: number
   powerWatts: number
   massKg: number
-  rateMbps: Record<TargetId, number>
+  rateGbitPerHour: Record<TargetId, number>
   pointingDeg: number
   costM: number
   trl: number
@@ -244,7 +226,7 @@ export interface ProcessorSpec {
 
 /* ==================== РЕЗУЛЬТАТ SOLVER.TS ==================== */
 
-export type GateId = 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10' | 'G11'
+export type GateId = 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10'
 
 export interface GateStatus {
   id: GateId
@@ -266,34 +248,29 @@ export interface ThreatResult {
 }
 
 export interface MissionReport {
-  // 8 ключових метрик верхньої панелі
   budgetUsedM: number
   budgetMaxM: number
   budgetReserveFrac: number
 
-  dryMassKg: number
+  spacecraftMassKg: number
   dryMassLimitKg: number
-  propellantMassKg: number
-  launchMassKg: number
   rocketLimitKg: number
 
-  powerGenEolWatts: number
-  powerNeedLightWatts: number
-  powerEclipseWatts: number
+  powerGenWatts: number
+  powerNeedWatts: number
 
   batteryCapacityWh: number
   batteryRequiredWh: number
-  actualDoD: number
 
+  dataRecGbitHour: number
+  dataDownlinkGbitHour: number
   dataGenGbitDay: number
   dataDownlinkGbitDay: number
+  contactHoursPerDay: number
+  maxBlackoutHours: number
+
   memoryCapacityGbit: number
   memoryRequiredGbit: number
-
-  devMonths: number
-  launchMonth: number
-  maxLaunchMonth: number
-  waitMonths: number
 
   scienceRaw: number
   scienceInstalled: number
@@ -309,18 +286,15 @@ export interface MissionReport {
   lifeMonths: number
   nominalMonths: number
 
-  // Ворота Go / No-Go
   gates: GateStatus[]
   allGatesPassed: boolean
 
-  // Симуляція польоту (детермінована за seed + attempt)
   outcome: MissionOutcome
   failedPhase?: MissionPhaseFail
   failureReason?: LocalizedText
   threatResults: ThreatResult[]
   telemetryLog: LocalizedText[]
 
-  // Фінальна оцінка
   score: number
   medal: MedalTier
 }
