@@ -80,8 +80,8 @@ export const TARGETS: Record<TargetId, MissionTarget> = {
     signalDelay: { en: '4 – 22 min', uk: '4 – 22 хв' },
     solarFlux: 0.43,
     maxEclipseHours: 1.4,
-    contactHoursByStations: [0, 2.5, 4.5, 7.0],
-    maxBlackoutHoursByStations: [24, 12, 7, 4],
+    contactHoursByStations: [0, 3.0, 5.5, 8.5],
+    maxBlackoutHoursByStations: [24, 10, 6, 3.5],
     tNomMonths: 12,
     bClassM: 520,
     bgRiskTransit: 0.08,
@@ -134,7 +134,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 24,
     powerWatts: 38,
-    dataGbitPerHour: 3.0,
+    dataGbitPerHour: 0.8,
     sciencePoints: 14,
     costM: 16,
   },
@@ -144,7 +144,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 22,
     powerWatts: 32,
-    dataGbitPerHour: 1.2,
+    dataGbitPerHour: 0.4,
     sciencePoints: 16,
     costM: 18,
   },
@@ -154,7 +154,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 52,
     powerWatts: 95,
-    dataGbitPerHour: 8.0,
+    dataGbitPerHour: 2.4,
     sciencePoints: 24,
     costM: 30,
   },
@@ -164,7 +164,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 20,
     powerWatts: 42,
-    dataGbitPerHour: 2.0,
+    dataGbitPerHour: 0.6,
     sciencePoints: 13,
     costM: 15,
   },
@@ -174,7 +174,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 12,
     powerWatts: 14,
-    dataGbitPerHour: 0.6,
+    dataGbitPerHour: 0.2,
     sciencePoints: 10,
     costM: 10,
   },
@@ -184,7 +184,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['leo'],
     massKg: 36,
     powerWatts: 55,
-    dataGbitPerHour: 1.5,
+    dataGbitPerHour: 0.5,
     sciencePoints: 21,
     costM: 26,
   },
@@ -196,7 +196,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 28,
     powerWatts: 45,
-    dataGbitPerHour: 3.5,
+    dataGbitPerHour: 0.9,
     sciencePoints: 18,
     costM: 22,
   },
@@ -206,7 +206,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 26,
     powerWatts: 36,
-    dataGbitPerHour: 1.0,
+    dataGbitPerHour: 0.3,
     sciencePoints: 20,
     costM: 25,
   },
@@ -216,7 +216,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 58,
     powerWatts: 105,
-    dataGbitPerHour: 7.5,
+    dataGbitPerHour: 2.2,
     sciencePoints: 28,
     costM: 38,
   },
@@ -226,7 +226,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 24,
     powerWatts: 40,
-    dataGbitPerHour: 2.2,
+    dataGbitPerHour: 0.6,
     sciencePoints: 17,
     costM: 21,
   },
@@ -236,7 +236,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 38,
     powerWatts: 52,
-    dataGbitPerHour: 1.4,
+    dataGbitPerHour: 0.4,
     sciencePoints: 24,
     costM: 30,
   },
@@ -246,7 +246,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['moon'],
     massKg: 16,
     powerWatts: 18,
-    dataGbitPerHour: 0.8,
+    dataGbitPerHour: 0.2,
     sciencePoints: 14,
     costM: 15,
   },
@@ -258,7 +258,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 36,
     powerWatts: 55,
-    dataGbitPerHour: 4.0,
+    dataGbitPerHour: 0.9,
     sciencePoints: 24,
     costM: 34,
   },
@@ -268,7 +268,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 65,
     powerWatts: 115,
-    dataGbitPerHour: 6.5,
+    dataGbitPerHour: 1.8,
     sciencePoints: 34,
     costM: 52,
   },
@@ -278,7 +278,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 32,
     powerWatts: 48,
-    dataGbitPerHour: 2.8,
+    dataGbitPerHour: 0.7,
     sciencePoints: 26,
     costM: 38,
   },
@@ -288,7 +288,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 28,
     powerWatts: 38,
-    dataGbitPerHour: 1.5,
+    dataGbitPerHour: 0.4,
     sciencePoints: 22,
     costM: 30,
   },
@@ -298,7 +298,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 18,
     powerWatts: 20,
-    dataGbitPerHour: 0.8,
+    dataGbitPerHour: 0.2,
     sciencePoints: 16,
     costM: 20,
   },
@@ -308,7 +308,7 @@ export const INSTRUMENTS: InstrumentSpec[] = [
     targets: ['mars'],
     massKg: 46,
     powerWatts: 75,
-    dataGbitPerHour: 3.2,
+    dataGbitPerHour: 0.8,
     sciencePoints: 30,
     costM: 44,
   },
@@ -494,7 +494,7 @@ export const RADIOS: RadioSpec[] = [
     targets: ['leo', 'moon', 'mars'],
     powerWatts: 18,
     massKg: 8,
-    rateGbitPerHour: { leo: 4.0, moon: 1.6, mars: 0.5 },
+    rateGbitPerHour: { leo: 5.0, moon: 2.5, mars: 1.4 },
     costM: 8,
   },
   {
@@ -503,7 +503,7 @@ export const RADIOS: RadioSpec[] = [
     targets: ['leo', 'moon', 'mars'],
     powerWatts: 36,
     massKg: 16,
-    rateGbitPerHour: { leo: 12.0, moon: 5.0, mars: 2.0 },
+    rateGbitPerHour: { leo: 14.0, moon: 8.0, mars: 4.5 },
     costM: 16,
   },
   {
@@ -512,7 +512,7 @@ export const RADIOS: RadioSpec[] = [
     targets: ['leo', 'moon', 'mars'],
     powerWatts: 62,
     massKg: 26,
-    rateGbitPerHour: { leo: 30.0, moon: 14.0, mars: 6.0 },
+    rateGbitPerHour: { leo: 32.0, moon: 20.0, mars: 11.0 },
     costM: 28,
   },
 ]
@@ -544,7 +544,7 @@ export const MEMORIES: MemorySpec[] = [
   },
   {
     id: 'mem_1024',
-    name: { en: '1024 Gbit Rad-SSR', uk: '1024 Гбіт SSR' },
+    name: { en: '1024 Gbit SSR', uk: '1024 Гбіт SSR' },
     capacityGbit: 1024,
     massKg: 18,
     powerWatts: 18,
@@ -584,6 +584,117 @@ export const DUTY_CYCLE_FACTOR: Record<DutyCycleId, number> = {
   eco: 1.0,
   normal: 1.0,
   max: 1.0,
+}
+
+/* ==================== ДЕТЕРМІНОВАНА ВАРІАТИВНІСТЬ ВІД SEED КІМНАТИ ==================== */
+
+function jitterFactor(seed: number, key: string, spread = 0.12): number {
+  let h = (seed ^ 0x9e3779b9) >>> 0
+  for (let i = 0; i < key.length; i++) {
+    h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0
+  }
+  h = Math.imul(h ^ (h >>> 16), 2246822507) >>> 0
+  h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0
+  const unit = ((h ^ (h >>> 16)) >>> 0) / 4294967296 // [0, 1)
+  return 1 + (unit * 2 - 1) * spread
+}
+
+function roundInt(val: number, min = 1): number {
+  return Math.max(min, Math.round(val))
+}
+
+function roundTenth(val: number, min = 0.1): number {
+  return Math.max(min, Math.round(val * 10) / 10)
+}
+
+export interface SeededCatalog {
+  platforms: PlatformSpec[]
+  instruments: InstrumentSpec[]
+  rockets: RocketSpec[]
+  adcsList: AdcsSpec[]
+  engines: EngineSpec[]
+  solarPanels: SolarPanelSpec[]
+  batteries: BatterySpec[]
+  radios: RadioSpec[]
+  memories: MemorySpec[]
+  processors: ProcessorSpec[]
+}
+
+export function getSeededCatalog(seed: number): SeededCatalog {
+  return {
+    platforms: PLATFORMS.map((p) => ({
+      ...p,
+      ownMassKg: roundInt(p.ownMassKg * jitterFactor(seed, `${p.id}:m`, 0.10)),
+      coreWatts: roundInt(p.coreWatts * jitterFactor(seed, `${p.id}:w`, 0.10)),
+      costM: roundInt(p.costM * jitterFactor(seed, `${p.id}:c`, 0.10)),
+    })),
+    instruments: INSTRUMENTS.map((inst) => ({
+      ...inst,
+      massKg: roundInt(inst.massKg * jitterFactor(seed, `${inst.id}:m`, 0.12)),
+      powerWatts: roundInt(inst.powerWatts * jitterFactor(seed, `${inst.id}:w`, 0.12)),
+      dataGbitPerHour: roundTenth(
+        inst.dataGbitPerHour * jitterFactor(seed, `${inst.id}:d`, 0.12),
+        0.1,
+      ),
+      sciencePoints: roundInt(inst.sciencePoints * jitterFactor(seed, `${inst.id}:s`, 0.12)),
+      costM: roundInt(inst.costM * jitterFactor(seed, `${inst.id}:c`, 0.10)),
+    })),
+    rockets: ROCKETS.map((rk) => ({
+      ...rk,
+      capKg: {
+        leo: roundInt(rk.capKg.leo * jitterFactor(seed, `${rk.id}:leo`, 0.08)),
+        moon: roundInt(rk.capKg.moon * jitterFactor(seed, `${rk.id}:moon`, 0.08)),
+        mars: roundInt(rk.capKg.mars * jitterFactor(seed, `${rk.id}:mars`, 0.08)),
+      },
+      costM: roundInt(rk.costM * jitterFactor(seed, `${rk.id}:c`, 0.10)),
+    })),
+    adcsList: ADCS_LIST.map((a) => ({
+      ...a,
+      scienceBonus: roundInt(a.scienceBonus * jitterFactor(seed, `${a.id}:s`, 0.12)),
+      massKg: roundInt(a.massKg * jitterFactor(seed, `${a.id}:m`, 0.10)),
+      powerWatts: roundInt(a.powerWatts * jitterFactor(seed, `${a.id}:w`, 0.10)),
+      costM: roundInt(a.costM * jitterFactor(seed, `${a.id}:c`, 0.10)),
+    })),
+    engines: ENGINES.map((en) => ({
+      ...en,
+      massKg: roundInt(en.massKg * jitterFactor(seed, `${en.id}:m`, 0.10)),
+      powerWatts: roundInt(en.powerWatts * jitterFactor(seed, `${en.id}:w`, 0.10)),
+      costM: roundInt(en.costM * jitterFactor(seed, `${en.id}:c`, 0.10)),
+    })),
+    solarPanels: SOLAR_PANELS.map((sp) => ({
+      ...sp,
+      kgPerM2: roundTenth(sp.kgPerM2 * jitterFactor(seed, `${sp.id}:m`, 0.10), 0.5),
+      costMPerM2: roundTenth(sp.costMPerM2 * jitterFactor(seed, `${sp.id}:c`, 0.10), 0.3),
+    })),
+    batteries: BATTERIES.map((b) => ({
+      ...b,
+      kgPerKwh: roundTenth(b.kgPerKwh * jitterFactor(seed, `${b.id}:m`, 0.10), 2.0),
+      costMPerKwh: roundTenth(b.costMPerKwh * jitterFactor(seed, `${b.id}:c`, 0.10), 0.5),
+    })),
+    radios: RADIOS.map((rd) => ({
+      ...rd,
+      massKg: roundInt(rd.massKg * jitterFactor(seed, `${rd.id}:m`, 0.10)),
+      powerWatts: roundInt(rd.powerWatts * jitterFactor(seed, `${rd.id}:w`, 0.10)),
+      rateGbitPerHour: {
+        leo: roundTenth(rd.rateGbitPerHour.leo * jitterFactor(seed, `${rd.id}:leo`, 0.10), 0.5),
+        moon: roundTenth(rd.rateGbitPerHour.moon * jitterFactor(seed, `${rd.id}:moon`, 0.10), 0.5),
+        mars: roundTenth(rd.rateGbitPerHour.mars * jitterFactor(seed, `${rd.id}:mars`, 0.10), 0.3),
+      },
+      costM: roundInt(rd.costM * jitterFactor(seed, `${rd.id}:c`, 0.10)),
+    })),
+    memories: MEMORIES.map((m) => ({
+      ...m,
+      massKg: roundInt(m.massKg * jitterFactor(seed, `${m.id}:m`, 0.10)),
+      powerWatts: roundInt(m.powerWatts * jitterFactor(seed, `${m.id}:w`, 0.10)),
+      costM: roundInt(m.costM * jitterFactor(seed, `${m.id}:c`, 0.10)),
+    })),
+    processors: PROCESSORS.map((pr) => ({
+      ...pr,
+      massKg: roundInt(pr.massKg * jitterFactor(seed, `${pr.id}:m`, 0.10)),
+      powerWatts: roundInt(pr.powerWatts * jitterFactor(seed, `${pr.id}:w`, 0.10)),
+      costM: roundInt(pr.costM * jitterFactor(seed, `${pr.id}:c`, 0.10)),
+    })),
+  }
 }
 
 export function createDefaultConfig(targetId: TargetId = 'leo'): MissionConfig {

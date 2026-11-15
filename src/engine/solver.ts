@@ -7,19 +7,10 @@ import type {
   MissionReport,
 } from '../types/game'
 import {
-  ADCS_LIST,
-  BATTERIES,
-  ENGINES,
   GROUND_STATION_COSTS_M,
-  INSTRUMENTS,
-  MEMORIES,
-  PLATFORMS,
-  PROCESSORS,
-  RADIOS,
-  ROCKETS,
-  SOLAR_PANELS,
   SYNERGIES,
   TARGETS,
+  getSeededCatalog,
 } from './catalog'
 
 /** Детермінований генератор псевдовипадкових чисел Mulberry32 */
@@ -46,22 +37,23 @@ export function solveMission(
   seed: number,
   attempt: number
 ): MissionReport {
+  const cat = getSeededCatalog(seed)
   const target = TARGETS[config.targetId]
-  const platform = PLATFORMS.find((p) => p.id === config.platformId) ?? null
-  const adcs = ADCS_LIST.find((a) => a.id === config.adcsId) ?? null
-  const panel = SOLAR_PANELS.find((p) => p.id === config.panelId) ?? null
-  const battery = BATTERIES.find((b) => b.id === config.batteryId) ?? null
+  const platform = cat.platforms.find((p) => p.id === config.platformId) ?? null
+  const adcs = cat.adcsList.find((a) => a.id === config.adcsId) ?? null
+  const panel = cat.solarPanels.find((p) => p.id === config.panelId) ?? null
+  const battery = cat.batteries.find((b) => b.id === config.batteryId) ?? null
   const rocket =
-    ROCKETS.find((r) => r.id === config.rocketId && r.targets.includes(config.targetId)) ??
-    ROCKETS.find((r) => r.targets.includes(config.targetId)) ??
+    cat.rockets.find((r) => r.id === config.rocketId && r.targets.includes(config.targetId)) ??
+    cat.rockets.find((r) => r.targets.includes(config.targetId)) ??
     null
-  const engine = ENGINES.find((e) => e.id === config.engineId) ?? null
+  const engine = cat.engines.find((e) => e.id === config.engineId) ?? null
   const radio =
-    RADIOS.find((r) => r.id === config.radioId && r.targets.includes(config.targetId)) ?? null
-  const memory = MEMORIES.find((m) => m.id === config.memoryId) ?? null
-  const processor = PROCESSORS.find((p) => p.id === config.processorId) ?? null
+    cat.radios.find((r) => r.id === config.radioId && r.targets.includes(config.targetId)) ?? null
+  const memory = cat.memories.find((m) => m.id === config.memoryId) ?? null
+  const processor = cat.processors.find((p) => p.id === config.processorId) ?? null
 
-  const validInstruments = INSTRUMENTS.filter(
+  const validInstruments = cat.instruments.filter(
     (inst) => config.instrumentIds.includes(inst.id) && inst.targets.includes(config.targetId)
   )
 
@@ -336,42 +328,45 @@ export function solveMission(
     }
 
     if (outcome === 'success') {
-      // Симуляція нефатальних збоїв на орбіті (мінус очки науки при поломці)
+      // Ймовірність поломок при ігноруванні безпеки залежить від небезпечності цілі
+      const hazardBase =
+        config.targetId === 'mars' ? 0.44 : config.targetId === 'moon' ? 0.34 : 0.24
+
       const minorEvents: Array<{
         chance: number
         lossFrac: number
         msg: LocalizedText
       }> = [
         {
-          chance: config.optShield ? 0.04 : 0.22,
-          lossFrac: 0.25,
+          chance: config.optShield ? 0.04 : hazardBase,
+          lossFrac: 0.30,
           msg: {
-            en: 'Micrometeorite impact degraded thermal & optical sensor (-25% science).',
-            uk: 'Удар мікрометеорита пошкодив сенсорний блок (-25% очок науки).',
+            en: 'Spacecraft pierced by micrometeorites — thermal & sensor array damaged (-30% science).',
+            uk: 'Апарат прошило мікрометеоритами — пошкоджено сенсори та обшивку (-30% очок науки).',
           },
         },
         {
-          chance: config.optRadHard ? 0.04 : 0.22,
-          lossFrac: 0.25,
+          chance: config.optRadHard ? 0.04 : hazardBase,
+          lossFrac: 0.30,
           msg: {
-            en: 'Solar particle event caused memory bit-flips and data loss (-25% science).',
-            uk: 'Сонячний спалах спричинив збій електроніки та втрату даних (-25% очок науки).',
+            en: 'Cosmic radiation burst fried unshielded memory banks (-30% science).',
+            uk: 'Космічна радіація вибила незахищену пам’ять та шину даних (-30% очок науки).',
           },
         },
         {
-          chance: config.optEncryption ? 0.03 : 0.18,
-          lossFrac: 0.20,
+          chance: config.optEncryption ? 0.03 : hazardBase * 0.85,
+          lossFrac: 0.25,
           msg: {
-            en: 'Command-link interference forced unscheduled safe-mode reboot (-20% science).',
-            uk: 'Перешкоди в каналі управління перевели апарат у безпечний режим (-20% очок науки).',
+            en: 'Command-link spoofing triggered emergency safe-mode reboot (-25% science).',
+            uk: 'Перехоплення й перешкоди в каналі управління перевели борт в аварійний режим (-25% очок науки).',
           },
         },
         {
-          chance: config.optRedundancy ? 0.04 : 0.24,
-          lossFrac: 0.25,
+          chance: config.optRedundancy ? 0.04 : hazardBase,
+          lossFrac: 0.28,
           msg: {
-            en: 'Secondary power bus degradation reduced instrument uptime (-25% science).',
-            uk: 'Деградація вторинної шини живлення скоротила час зйомки (-25% очок науки).',
+            en: 'Single-string avionics glitch disabled one science channel (-28% science).',
+            uk: 'Відмова нерезервованого вузла відключила частину приладів (-28% очок науки).',
           },
         },
       ]

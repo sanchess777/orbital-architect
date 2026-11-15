@@ -53,11 +53,6 @@ export default function MissionReportScreen({
 
   const failedIdx = report.failedPhase ? PHASE_ORDER.indexOf(report.failedPhase) : -1
 
-  // Частки балів для наочної розбивки (500 / 300 / 200)
-  const sciPts = Math.round(500 * Math.min(1, report.scienceExpected / target.sRef))
-  const relPts = Math.round(300 * Math.max(0, 1 - report.failProbTotal))
-  const lifePts = Math.round(200 * Math.min(1, report.lifeMonths / target.tNomMonths))
-
   return (
     <div className="space-y-4">
       <div className={`rounded-lg border p-5 ${bannerStyle}`}>
@@ -78,7 +73,7 @@ export default function MissionReportScreen({
                 {t.finalScoreLabel}
               </div>
               <div className="text-3xl font-black tabular-nums text-cyan-300">
-                {report.score} <span className="text-sm font-normal text-slate-400">/ 1000</span>
+                {report.score} <span className="text-sm font-normal text-slate-400">/ 100</span>
               </div>
             </div>
             <div className="rounded bg-cyan-500/20 px-2.5 py-1 text-xs font-bold text-cyan-200">
@@ -124,8 +119,8 @@ export default function MissionReportScreen({
         </div>
       </div>
 
-      {/* Ключові підсумки + Аналог NASA + Розбивка балів */}
-      <div className="grid gap-3 md:grid-cols-4">
+      {/* Ключові підсумки + Аналог NASA */}
+      <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
           <div className="text-xs uppercase tracking-wider text-slate-400">
             {t.nasaAnalogLabel}
@@ -138,8 +133,7 @@ export default function MissionReportScreen({
             {t.deliveredScienceLabel}
           </div>
           <div className="mt-1 text-base font-bold tabular-nums text-slate-100">
-            {report.outcome === 'failed' ? '0.0' : report.sciencePotential.toFixed(1)} /{' '}
-            {report.scienceRef} pts
+            {report.deliveredScience.toFixed(1)} / {report.scienceRef} pts
           </div>
         </div>
 
@@ -148,49 +142,9 @@ export default function MissionReportScreen({
             {t.achievedLifeLabel}
           </div>
           <div className="mt-1 text-base font-bold tabular-nums text-slate-100">
-            {report.outcome === 'failed' ? '0' : report.lifeMonths.toFixed(1)} /{' '}
+            {report.outcome === 'failed' ? '0' : report.lifeMonths.toFixed(0)} /{' '}
             {report.nominalMonths} {t.monthsUnit}
           </div>
-        </div>
-
-        <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-xs">
-          <div className="uppercase tracking-wider text-slate-400">{t.scoreBreakdownTitle}</div>
-          <div className="mt-1.5 space-y-1 tabular-nums text-slate-200">
-            <div className="flex justify-between">
-              <span>{t.scoreSciPart}:</span>
-              <span className="font-semibold text-cyan-300">{sciPts} / 500</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t.scoreRelPart}:</span>
-              <span className="font-semibold text-cyan-300">{relPts} / 300</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t.scoreLifePart}:</span>
-              <span className="font-semibold text-cyan-300">{lifePts} / 200</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Вплив середовища та загроз */}
-      <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-cyan-400">
-          {t.hazardOutcomeTitle}
-        </h3>
-        <div className="grid gap-2 md:grid-cols-2">
-          {report.threatResults.map((tr) => (
-            <div
-              key={tr.threat.id}
-              className={`rounded border p-3 text-xs ${
-                tr.mitigated
-                  ? 'border-emerald-500/40 bg-emerald-950/20 text-emerald-200'
-                  : 'border-amber-500/50 bg-amber-950/25 text-amber-200'
-              }`}
-            >
-              <div className="font-bold">{pick(tr.threat.name)}</div>
-              <div className="mt-1 text-slate-200">{pick(tr.detail)}</div>
-            </div>
-          ))}
         </div>
       </div>
 

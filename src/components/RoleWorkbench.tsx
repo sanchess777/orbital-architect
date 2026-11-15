@@ -1,18 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  ADCS_LIST,
-  BATTERIES,
-  ENGINES,
   GROUND_STATION_COSTS_M,
-  INSTRUMENTS,
-  MEMORIES,
-  PLATFORMS,
-  PROCESSORS,
-  RADIOS,
-  ROCKETS,
-  SOLAR_PANELS,
   SYNERGIES,
   TARGETS,
+  getSeededCatalog,
 } from '../engine/catalog'
 import { ROLES, ROLE_INFO } from '../engine/roles'
 import { useLang } from '../i18n/LangContext'
@@ -34,10 +25,12 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
   const myRoles = ROLES.filter((r) => room.roleOwners[r] === selfId)
   const [activeRole, setActiveRole] = useState<PlayerRole>(myRoles[0] ?? 'science')
 
+  const cat = useMemo(() => getSeededCatalog(room.seed), [room.seed])
+
   const config = room.config
   const target = TARGETS[config.targetId]
-  const platform = PLATFORMS.find((p) => p.id === config.platformId) ?? null
-  const selectedBattery = BATTERIES.find((b) => b.id === config.batteryId) ?? null
+  const platform = cat.platforms.find((p) => p.id === config.platformId) ?? null
+  const selectedBattery = cat.batteries.find((b) => b.id === config.batteryId) ?? null
   const maxInstruments = platform ? platform.maxInstruments : 0
 
   const ownerId = room.roleOwners[activeRole]
@@ -61,7 +54,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
 
   const selectPlatform = (platformId: string) => {
     if (!canEdit) return
-    const nextPlat = PLATFORMS.find((p) => p.id === platformId)
+    const nextPlat = cat.platforms.find((p) => p.id === platformId)
     const nextMax = nextPlat ? nextPlat.maxInstruments : 0
     const trimmed =
       nextMax > 0 && config.instrumentIds.length > nextMax
@@ -141,7 +134,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {PLATFORMS.map((p) => (
+              {cat.platforms.map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -177,44 +170,46 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
-              {INSTRUMENTS.filter(
-                (inst) =>
-                  inst.targets.includes(target.id) || config.instrumentIds.includes(inst.id),
-              ).map((inst) => {
-                const checked = config.instrumentIds.includes(inst.id)
-                const limitReached =
-                  !checked && maxInstruments > 0 && config.instrumentIds.length >= maxInstruments
-                return (
-                  <label
-                    key={inst.id}
-                    className={`flex cursor-pointer flex-col justify-between rounded border p-2.5 text-xs transition ${
-                      checked
-                        ? 'border-cyan-500/70 bg-cyan-950/30'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                    } ${!canEdit || limitReached ? 'cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-slate-100">{pick(inst.name)}</span>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={!canEdit || limitReached}
-                        onChange={() => toggleInstrument(inst.id)}
-                        className="mt-0.5 accent-cyan-500"
-                      />
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-slate-400">
-                      <span className="text-cyan-300">+{inst.sciencePoints} sci</span>
-                      <span>{inst.massKg} kg</span>
-                      <span>{inst.powerWatts} W</span>
-                      <span>
-                        {inst.dataGbitPerHour} {t.gbitHourUnit}
-                      </span>
-                      <span>{inst.costM} M$</span>
-                    </div>
-                  </label>
+              {cat.instruments
+                .filter(
+                  (inst) =>
+                    inst.targets.includes(target.id) || config.instrumentIds.includes(inst.id),
                 )
-              })}
+                .map((inst) => {
+                  const checked = config.instrumentIds.includes(inst.id)
+                  const limitReached =
+                    !checked && maxInstruments > 0 && config.instrumentIds.length >= maxInstruments
+                  return (
+                    <label
+                      key={inst.id}
+                      className={`flex cursor-pointer flex-col justify-between rounded border p-2.5 text-xs transition ${
+                        checked
+                          ? 'border-cyan-500/70 bg-cyan-950/30'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                      } ${!canEdit || limitReached ? 'cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-semibold text-slate-100">{pick(inst.name)}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={!canEdit || limitReached}
+                          onChange={() => toggleInstrument(inst.id)}
+                          className="mt-0.5 accent-cyan-500"
+                        />
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-slate-400">
+                        <span className="text-cyan-300">+{inst.sciencePoints} sci</span>
+                        <span>{inst.massKg} kg</span>
+                        <span>{inst.powerWatts} W</span>
+                        <span>
+                          {inst.dataGbitPerHour.toFixed(1)} {t.gbitHourUnit}
+                        </span>
+                        <span>{inst.costM} M$</span>
+                      </div>
+                    </label>
+                  )
+                })}
             </div>
           </div>
         </div>
@@ -233,7 +228,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {SOLAR_PANELS.map((sp) => (
+              {cat.solarPanels.map((sp) => (
                 <button
                   key={sp.id}
                   type="button"
@@ -252,7 +247,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                 >
                   <div className="font-semibold text-slate-100">{pick(sp.name)}</div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
-                    {sp.kgPerM2} kg/m² · {sp.costMPerM2} M$/m²
+                    {sp.kgPerM2.toFixed(1)} kg/m² · {sp.costMPerM2.toFixed(1)} M$/m²
                   </div>
                 </button>
               ))}
@@ -287,7 +282,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {BATTERIES.map((b) => (
+              {cat.batteries.map((b) => (
                 <button
                   key={b.id}
                   type="button"
@@ -306,7 +301,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                 >
                   <div className="font-semibold text-slate-100">{pick(b.name)}</div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
-                    {b.kgPerKwh} kg/kWh · {b.costMPerKwh} M$/kWh
+                    {b.kgPerKwh.toFixed(1)} kg/kWh · {b.costMPerKwh.toFixed(1)} M$/kWh
                   </div>
                 </button>
               ))}
@@ -368,32 +363,32 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               {t.secRocket}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {ROCKETS.filter(
-                (rk) => rk.capKg[target.id] > 0 || config.rocketId === rk.id,
-              ).map((rk) => {
-                const cap = rk.capKg[target.id]
-                return (
-                  <button
-                    key={rk.id}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => patch({ rocketId: rk.id })}
-                    className={`rounded border p-2.5 text-left text-xs transition ${
-                      config.rocketId === rk.id
-                        ? 'border-cyan-400 bg-cyan-950/40'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    <div className="flex justify-between gap-2 font-semibold text-slate-100">
-                      <span>{pick(rk.name)}</span>
-                      <span className="shrink-0 text-cyan-300">{cap > 0 ? `${cap} kg` : 'N/A'}</span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate-400">
-                      {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(1)}%
-                    </div>
-                  </button>
-                )
-              })}
+              {cat.rockets
+                .filter((rk) => rk.capKg[target.id] > 0 || config.rocketId === rk.id)
+                .map((rk) => {
+                  const cap = rk.capKg[target.id]
+                  return (
+                    <button
+                      key={rk.id}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => patch({ rocketId: rk.id })}
+                      className={`rounded border p-2.5 text-left text-xs transition ${
+                        config.rocketId === rk.id
+                          ? 'border-cyan-400 bg-cyan-950/40'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                      } disabled:cursor-not-allowed`}
+                    >
+                      <div className="flex justify-between gap-2 font-semibold text-slate-100">
+                        <span>{pick(rk.name)}</span>
+                        <span className="shrink-0 text-cyan-300">{cap > 0 ? `${cap} kg` : 'N/A'}</span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(1)}%
+                      </div>
+                    </button>
+                  )
+                })}
             </div>
           </div>
 
@@ -407,7 +402,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {ADCS_LIST.map((a) => (
+              {cat.adcsList.map((a) => (
                 <button
                   key={a.id}
                   type="button"
@@ -446,7 +441,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {ENGINES.map((en) => {
+              {cat.engines.map((en) => {
                 const selected = config.engineId === en.id
                 const bonusPct = Math.round((en.scienceBonusMult - 1) * 100)
                 return (
@@ -491,34 +486,34 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {RADIOS.filter(
-                (rd) => rd.rateGbitPerHour[target.id] > 0 || config.radioId === rd.id,
-              ).map((rd) => {
-                const rate = rd.rateGbitPerHour[target.id]
-                return (
-                  <button
-                    key={rd.id}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => patch({ radioId: rd.id })}
-                    className={`rounded border p-2.5 text-left text-xs transition ${
-                      config.radioId === rd.id
-                        ? 'border-cyan-400 bg-cyan-950/40'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    <div className="flex justify-between gap-2 font-semibold text-slate-100">
-                      <span>{pick(rd.name)}</span>
-                      <span className="shrink-0 text-cyan-300">
-                        {rate > 0 ? `${rate} ${t.gbitHourUnit}` : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate-400">
-                      {rd.massKg} kg · {rd.powerWatts} W · {rd.costM} M$
-                    </div>
-                  </button>
-                )
-              })}
+              {cat.radios
+                .filter((rd) => rd.rateGbitPerHour[target.id] > 0 || config.radioId === rd.id)
+                .map((rd) => {
+                  const rate = rd.rateGbitPerHour[target.id]
+                  return (
+                    <button
+                      key={rd.id}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => patch({ radioId: rd.id })}
+                      className={`rounded border p-2.5 text-left text-xs transition ${
+                        config.radioId === rd.id
+                          ? 'border-cyan-400 bg-cyan-950/40'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                      } disabled:cursor-not-allowed`}
+                    >
+                      <div className="flex justify-between gap-2 font-semibold text-slate-100">
+                        <span>{pick(rd.name)}</span>
+                        <span className="shrink-0 text-cyan-300">
+                          {rate > 0 ? `${rate.toFixed(1)} ${t.gbitHourUnit}` : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        {rd.massKg} kg · {rd.powerWatts} W · {rd.costM} M$
+                      </div>
+                    </button>
+                  )
+                })}
             </div>
           </div>
 
@@ -532,7 +527,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
               )}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {MEMORIES.map((m) => (
+              {cat.memories.map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -564,7 +559,7 @@ export default function RoleWorkbench({ room, selfId }: RoleWorkbenchProps) {
                 </span>
               </div>
               <div className="space-y-1.5">
-                {PROCESSORS.map((pr) => {
+                {cat.processors.map((pr) => {
                   const selected = config.processorId === pr.id
                   return (
                     <button
