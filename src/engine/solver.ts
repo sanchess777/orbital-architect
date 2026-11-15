@@ -1,5 +1,4 @@
 import type {
-  GateStatus,
   LocalizedText,
   MedalTier,
   MissionConfig,
@@ -73,7 +72,7 @@ export function solveMission(
   )
   const duty = DUTY_CYCLE_FACTOR[config.dutyCycle] ?? 1.0
 
-  /* ==================== 1. ВАГА АПАРАТА VS РАКЕТА ==================== */
+  /* ==================== 1. ВАГА АПАРАТА VS РАКЕТА ТА КОРПУС ==================== */
   const redMassMult = config.optRedundancy ? 1.65 : 1.0
   const redCostMult = config.optRedundancy ? 1.5 : 1.0
 
@@ -105,6 +104,11 @@ export function solveMission(
 
   const rocketLimitKg = rocket ? rocket.capKg[config.targetId] : 0
   const dryMassLimitKg = platform ? platform.maxDryMassKg : 0
+  const maxInstruments = platform ? platform.maxInstruments : 0
+  const busCompatible =
+    platform !== null &&
+    validInstruments.length <= platform.maxInstruments &&
+    spacecraftMassKg <= platform.maxDryMassKg
 
   /* ==================== 2. ЕНЕРГІЯ ТА БАТАРЕЯ ==================== */
   const powerGenWatts =
@@ -126,7 +130,6 @@ export function solveMission(
     (config.optRedundancy ? 15 : 0)
 
   const batteryCapacityWh = battery ? config.batteryKwh * 1000 : 0
-  // Запас ~18% (ділимо на 0.85), щоб батареї гарантовано вистачало на найдовший час у тіні
   const batteryRequiredWh = (powerNeedWatts * target.maxEclipseHours) / 0.85
 
   /* ==================== 3. ПОГОДИННИЙ ЗАПИС І ПЕРЕДАЧА ДАНИХ ==================== */
@@ -135,16 +138,18 @@ export function solveMission(
   const dataRecGbitHour = rawDataHour / compression
   const dataGenGbitDay = dataRecGbitHour * 24
 
-  const strictestPointing = Math.min(
+  const requiredPointingDeg = Math.min(
     radio ? radio.pointingDeg : 99,
     ...validInstruments.map((i) => i.pointingDeg)
   )
+  const adcsCompatible = adcs !== null && adcs.pointingDeg <= requiredPointingDeg * 3
+
   const pointingFactor =
     !adcs
       ? 0
-      : adcs.pointingDeg <= strictestPointing
+      : adcs.pointingDeg <= requiredPointingDeg
         ? 1.0
-        : Math.pow(strictestPointing / adcs.pointingDeg, 2)
+        : Math.pow(requiredPointingDeg / adcs.pointingDeg, 2)
 
   const radioBaseRate = radio ? radio.rateGbitPerHour[config.targetId] : 0
   const dataDownlinkGbitHour =
@@ -330,173 +335,47 @@ export function solveMission(
     }
   })
 
-  /* ==================== 8. ВОРОТА GO / NO-GO ==================== */
-  const gates: GateStatus[] = [
-    {
-      id: 'G1',
-      owners: ['flight', 'bus'],
-      passed: rocketLimitKg > 0 && spacecraftMassKg > 0 && spacecraftMassKg <= rocketLimitKg,
-      title: { en: 'G1 · Spacecraft Mass vs Rocket', uk: 'G1 · Вага апарата vs Ракета' },
-      summary: {
-        en: `${Math.round(spacecraftMassKg)} / ${Math.round(rocketLimitKg)} kg`,
-        uk: `${Math.round(spacecraftMassKg)} / ${Math.round(rocketLimitKg)} кг`,
-      },
-      advice: {
-        en: 'Select a heavier launch vehicle or reduce spacecraft component mass.',
-        uk: 'Оберіть потужнішу ракету-носій або зменште сумарну масу компонентів.',
-      },
-    },
-    {
-      id: 'G2',
-      owners: ['bus'],
-      passed: powerGenWatts > 0 && powerGenWatts >= powerNeedWatts,
-      title: { en: 'G2 · Power Balance', uk: 'G2 · Баланс потужності' },
-      summary: {
-        en: `${Math.round(powerGenWatts)} W gen / ${Math.round(powerNeedWatts)} W load`,
-        uk: `${Math.round(powerGenWatts)} Вт ген. / ${Math.round(powerNeedWatts)} Вт спож.`,
-      },
-      advice: {
-        en: 'Select solar arrays and increase panel area to exceed total device power.',
-        uk: 'Оберіть сонячні панелі та збільште їх площу вище за споживання всіх пристроїв.',
-      },
-    },
-    {
-      id: 'G3',
-      owners: ['bus'],
-      passed: batteryCapacityWh > 0 && batteryCapacityWh >= batteryRequiredWh,
-      title: { en: 'G3 · Eclipse Battery Capacity', uk: 'G3 · Ємність батареї для тіні' },
-      summary: {
-        en: `${Math.round(batteryCapacityWh)} / ${Math.round(batteryRequiredWh)} Wh`,
-        uk: `${Math.round(batteryCapacityWh)} / ${Math.round(batteryRequiredWh)} Вт·год`,
-      },
-      advice: {
-        en: 'Select a battery and increase capacity to survive the longest eclipse.',
-        uk: 'Оберіть батарею та збільште ємність (Вт·год) для роботи протягом найдовшої тіні.',
-      },
-    },
-    {
-      id: 'G4',
-      owners: ['comms'],
-      passed: memoryCapacityGbit > 0 && memoryCapacityGbit >= memoryRequiredGbit,
-      title: { en: 'G4 · Onboard Data Buffer', uk: 'G4 · Буфер пам’яті без зв’язку' },
-      summary: {
-        en: `${memoryCapacityGbit} / ${Math.ceil(memoryRequiredGbit)} Gbit`,
-        uk: `${memoryCapacityGbit} / ${Math.ceil(memoryRequiredGbit)} Гбіт`,
-      },
-      advice: {
-        en: 'Select larger onboard storage, data compression, or more ground stations.',
-        uk: 'Оберіть більшу пам’ять, стиснення даних або додайте наземні станції.',
-      },
-    },
-    {
-      id: 'G5',
-      owners: ['comms'],
-      passed:
-        contactHoursPerDay > 0 &&
-        dataDownlinkGbitHour > 0 &&
-        dataDownlinkGbitDay >= dataGenGbitDay,
-      title: { en: 'G5 · Earth Downlink Capacity', uk: 'G5 · Швидкість передачі на Землю' },
-      summary: {
-        en: `${dataDownlinkGbitDay.toFixed(1)} / ${dataGenGbitDay.toFixed(1)} Gbit/d`,
-        uk: `${dataDownlinkGbitDay.toFixed(1)} / ${dataGenGbitDay.toFixed(1)} Гбіт/д`,
-      },
-      advice: {
-        en: 'Select a faster transmitter, ground stations, or better ADCS pointing.',
-        uk: 'Оберіть швидший передавач, наземні станції або точнішу систему орієнтації.',
-      },
-    },
-    {
-      id: 'G6',
-      owners: ['science', 'bus', 'flight', 'comms'],
-      passed: budgetUsedM <= budgetMaxM,
-      title: { en: 'G6 · Mission Budget Cap', uk: 'G6 · Ліміт бюджету місії' },
-      summary: {
-        en: `${budgetUsedM.toFixed(1)} / ${budgetMaxM.toFixed(1)} M$`,
-        uk: `${budgetUsedM.toFixed(1)} / ${budgetMaxM.toFixed(1)} М$`,
-      },
-      advice: {
-        en: 'Trim expensive subsystems or pick a cheaper rocket to fit the budget.',
-        uk: 'Замініть дорогі компоненти або оберіть дешевшу ракету, щоб вкластися в бюджет.',
-      },
-    },
-    {
-      id: 'G7',
-      owners: ['bus', 'science'],
-      passed:
-        platform !== null &&
-        adcs !== null &&
-        validInstruments.length <= platform.maxInstruments &&
-        spacecraftMassKg <= platform.maxDryMassKg &&
-        adcs.pointingDeg <= strictestPointing * 3,
-      title: { en: 'G7 · Bus & ADCS Compatibility', uk: 'G7 · Сумісність корпусу й ADCS' },
-      summary: {
-        en: platform
-          ? `${validInstruments.length}/${platform.maxInstruments} inst · ${Math.round(spacecraftMassKg)}/${platform.maxDryMassKg} kg`
-          : 'No bus selected',
-        uk: platform
-          ? `${validInstruments.length}/${platform.maxInstruments} прил. · ${Math.round(spacecraftMassKg)}/${platform.maxDryMassKg} кг`
-          : 'Корпус не обрано',
-      },
-      advice: {
-        en: 'Select a spacecraft bus, attitude control (ADCS), and keep mass/instruments within limits.',
-        uk: 'Оберіть корпус апарата й систему орієнтації та не перевищуйте ліміт приладів і маси.',
-      },
-    },
-    {
-      id: 'G8',
-      owners: ['science'],
-      passed: scienceInstalled >= target.sMin,
-      title: { en: 'G8 · Minimum Science Threshold', uk: 'G8 · Мінімальна наукова цінність' },
-      summary: {
-        en: `${scienceInstalled.toFixed(1)} / ${target.sMin} pts min`,
-        uk: `${scienceInstalled.toFixed(1)} / ${target.sMin} балів мін.`,
-      },
-      advice: {
-        en: 'Install scientific instruments or combine synergistic pairs.',
-        uk: 'Встановіть наукові прилади або скомбінуйте синергічні пари.',
-      },
-    },
-    {
-      id: 'G9',
-      owners: ['flight'],
-      passed: failProbTotal <= target.rMax || config.acceptHighRisk,
-      title: { en: 'G9 · Mission Reliability Gate', uk: 'G9 · Допустимий ризик провалу' },
-      summary: {
-        en: `${(failProbTotal * 100).toFixed(1)}% / max ${(target.rMax * 100).toFixed(0)}%`,
-        uk: `${(failProbTotal * 100).toFixed(1)}% / макс. ${(target.rMax * 100).toFixed(0)}%`,
-      },
-      advice: {
-        en: 'Pick a proven TRL-9 rocket, enable redundancy, or override risk.',
-        uk: 'Оберіть надійнішу ракету (TRL 9), резервування або дозвольте підвищений ризик.',
-      },
-    },
-    {
-      id: 'G10',
-      owners: ['science', 'bus', 'flight', 'comms'],
-      passed:
-        validInstruments.length >= 1 &&
-        platform !== null &&
-        adcs !== null &&
-        panel !== null &&
-        config.panelAreaM2 > 0 &&
-        battery !== null &&
-        config.batteryKwh > 0 &&
-        radio !== null &&
-        memory !== null &&
-        config.groundStations >= 1,
-      title: { en: 'G10 · Required Systems Selected', uk: 'G10 · Обов’язкові системи обрано' },
-      summary: {
-        en: `${validInstruments.length} inst · ${config.groundStations} st.`,
-        uk: `${validInstruments.length} прил. · ${config.groundStations} ст.`,
-      },
-      advice: {
-        en: 'Ensure instruments, bus, panels, battery, ADCS, radio, memory, and ≥1 station are selected.',
-        uk: 'Перевірте, що обрано прилади, корпус, панелі, батарею, ADCS, передавач, пам’ять і ≥1 станцію.',
-      },
-    },
-  ]
+  /* ==================== 8. ПЕРЕВІРКА 8 ВЕРХНІХ МЕТРИК ==================== */
+  const metricIssues: LocalizedText[] = []
 
-  const allGatesPassed = gates.every((g) => g.passed)
+  if (budgetUsedM > budgetMaxM) {
+    metricIssues.push({ en: 'Budget', uk: 'Бюджет' })
+  }
+  if (
+    rocketLimitKg <= 0 ||
+    spacecraftMassKg <= 0 ||
+    spacecraftMassKg > rocketLimitKg ||
+    !busCompatible
+  ) {
+    metricIssues.push({ en: 'Spacecraft Mass', uk: 'Вага апарата' })
+  }
+  if (dataRecGbitHour <= 0) {
+    metricIssues.push({ en: 'Data Recording', uk: 'Запис даних' })
+  }
+  if (
+    contactHoursPerDay <= 0 ||
+    dataDownlinkGbitHour <= 0 ||
+    dataDownlinkGbitDay < dataGenGbitDay ||
+    memoryCapacityGbit <= 0 ||
+    memoryCapacityGbit < memoryRequiredGbit ||
+    !adcsCompatible
+  ) {
+    metricIssues.push({ en: 'Earth Downlink', uk: 'Передача на Землю' })
+  }
+  if (powerGenWatts <= 0 || powerGenWatts < powerNeedWatts) {
+    metricIssues.push({ en: 'Power', uk: 'Потужність' })
+  }
+  if (batteryCapacityWh <= 0 || batteryCapacityWh < batteryRequiredWh) {
+    metricIssues.push({ en: 'Battery', uk: 'Батарея' })
+  }
+  if (scienceInstalled < target.sMin) {
+    metricIssues.push({ en: 'Expected Science', uk: 'Очікувана наука' })
+  }
+  if (failProbTotal > target.rMax && !config.acceptHighRisk) {
+    metricIssues.push({ en: 'Failure Risk', uk: 'Ризик провалу' })
+  }
+
+  const canLaunch = metricIssues.length === 0
 
   /* ==================== 9. ОЧІКУВАНА НАУКА ==================== */
   const fDuty = Math.sqrt(duty)
@@ -575,12 +454,12 @@ export function solveMission(
     },
   ]
 
-  if (!allGatesPassed) {
+  if (!canLaunch) {
     outcome = 'blocked'
     deliveredScience = 0
     telemetryLog.push({
-      en: 'LAUNCH ABORTED — One or more Go/No-Go engineering gates failed.',
-      uk: 'ЗАПУСК СКАСОВАНО — не пройдено обов’язкові інженерні ворота Go/No-Go.',
+      en: 'LAUNCH ABORTED — Resolve red mission metrics before launch.',
+      uk: 'ЗАПУСК СКАСОВАНО — виправте червоні метрики місії перед стартом.',
     })
   } else {
     for (const step of phaseList) {
@@ -661,6 +540,14 @@ export function solveMission(
     maxBlackoutHours,
     memoryCapacityGbit,
     memoryRequiredGbit,
+    platformName: platform ? platform.name : null,
+    instrumentsCount: validInstruments.length,
+    maxInstruments,
+    busCompatible,
+    adcsPointingDeg: adcs ? adcs.pointingDeg : null,
+    requiredPointingDeg,
+    adcsCompatible,
+    engineName: engine ? engine.name : null,
     scienceRaw,
     scienceInstalled,
     sciencePotential,
@@ -677,8 +564,8 @@ export function solveMission(
     },
     lifeMonths,
     nominalMonths: target.tNomMonths,
-    gates,
-    allGatesPassed,
+    metricIssues,
+    canLaunch,
     outcome,
     failedPhase,
     failureReason,

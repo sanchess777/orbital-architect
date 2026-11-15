@@ -49,56 +49,68 @@ export default function MetricsBar({ report }: MetricsBarProps) {
 
   // 1. Бюджет
   const budRatio = report.budgetMaxM > 0 ? report.budgetUsedM / report.budgetMaxM : 1
-  const budStatus = budRatio > 1 ? 'bad' : budRatio > 0.9 ? 'warn' : 'ok'
+  const budBad = report.budgetUsedM > report.budgetMaxM
+  const budStatus = budBad ? 'bad' : budRatio > 0.9 ? 'warn' : 'ok'
 
-  // 2. Вага апарата vs ракета
+  // 2. Вага апарата vs ракета та корпус
   const massRatio = report.rocketLimitKg > 0 ? report.spacecraftMassKg / report.rocketLimitKg : 1.5
-  const g1Ok = report.gates.find((g) => g.id === 'G1')?.passed ?? false
-  const massStatus = !g1Ok ? 'bad' : massRatio > 0.9 ? 'warn' : 'ok'
+  const massBad =
+    report.rocketLimitKg <= 0 ||
+    report.spacecraftMassKg <= 0 ||
+    report.spacecraftMassKg > report.rocketLimitKg ||
+    !report.busCompatible
+  const massStatus = massBad ? 'bad' : massRatio > 0.9 ? 'warn' : 'ok'
 
   // 3. Швидкість запису інформації (Гбіт/год)
   const recRatio = report.dataRecGbitHour > 0 ? Math.min(1, report.dataRecGbitHour / 30) : 0
-  const recStatus = report.dataRecGbitHour <= 0 ? 'bad' : 'ok'
+  const recBad = report.dataRecGbitHour <= 0
+  const recStatus = recBad ? 'bad' : 'ok'
 
-  // 4. Швидкість передачі на Землю (Гбіт/год)
-  const g5Ok = report.gates.find((g) => g.id === 'G5')?.passed ?? false
+  // 4. Швидкість передачі на Землю (Гбіт/год) + буфер пам'яті + ADCS
+  const downBad =
+    report.contactHoursPerDay <= 0 ||
+    report.dataDownlinkGbitHour <= 0 ||
+    report.dataDownlinkGbitDay < report.dataGenGbitDay ||
+    report.memoryCapacityGbit <= 0 ||
+    report.memoryCapacityGbit < report.memoryRequiredGbit ||
+    !report.adcsCompatible
   const downRatio =
     report.dataGenGbitDay > 0
       ? Math.min(1, report.dataDownlinkGbitDay / report.dataGenGbitDay)
       : report.dataDownlinkGbitHour > 0
         ? 1
         : 0
-  const downStatus = !g5Ok ? 'bad' : downRatio < 1.1 ? 'warn' : 'ok'
+  const downStatus = downBad ? 'bad' : downRatio < 1.1 ? 'warn' : 'ok'
 
   // 5. Потужність пристроїв (Вт)
   const pwrRatio =
     report.powerGenWatts > 0 ? report.powerNeedWatts / report.powerGenWatts : 1.5
-  const g2Ok = report.gates.find((g) => g.id === 'G2')?.passed ?? false
-  const pwrStatus = !g2Ok ? 'bad' : pwrRatio > 0.9 ? 'warn' : 'ok'
+  const pwrBad = report.powerGenWatts <= 0 || report.powerGenWatts < report.powerNeedWatts
+  const pwrStatus = pwrBad ? 'bad' : pwrRatio > 0.9 ? 'warn' : 'ok'
 
   // 6. Ємність батареї (Вт·год)
   const batRatio =
     report.batteryCapacityWh > 0 ? report.batteryRequiredWh / report.batteryCapacityWh : 1.5
-  const g3Ok = report.gates.find((g) => g.id === 'G3')?.passed ?? false
-  const batStatus = !g3Ok ? 'bad' : batRatio > 0.9 ? 'warn' : 'ok'
+  const batBad = report.batteryCapacityWh <= 0 || report.batteryCapacityWh < report.batteryRequiredWh
+  const batStatus = batBad ? 'bad' : batRatio > 0.9 ? 'warn' : 'ok'
 
   // 7. Очікувана наука
   const sciRatio = report.scienceRef > 0 ? report.scienceExpected / report.scienceRef : 0
-  const sciStatus =
-    report.scienceInstalled < report.scienceMin
-      ? 'bad'
-      : report.scienceInstalled < report.scienceMin * 1.15
-        ? 'warn'
-        : 'ok'
+  const sciBad = report.scienceInstalled < report.scienceMin
+  const sciStatus = sciBad
+    ? 'bad'
+    : report.scienceInstalled < report.scienceMin * 1.15
+      ? 'warn'
+      : 'ok'
 
   // 8. Ризик провалу
   const riskRatio = report.failProbMax > 0 ? report.failProbTotal / report.failProbMax : 1
-  const riskStatus =
-    report.failProbTotal > report.failProbMax
-      ? 'bad'
-      : report.failProbTotal > report.failProbMax * 0.85
-        ? 'warn'
-        : 'ok'
+  const riskBad = report.metricIssues.some((m) => m.en === 'Failure Risk')
+  const riskStatus = riskBad
+    ? 'bad'
+    : report.failProbTotal > report.failProbMax * 0.85
+      ? 'warn'
+      : 'ok'
 
   return (
     <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
@@ -115,7 +127,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         sub={
           report.dryMassLimitKg > 0
             ? `Bus max: ${report.dryMassLimitKg} kg`
-            : t.notSelectedLabel
+            : t.busNotSelectedLabel
         }
         ratio={massRatio}
         status={massStatus}
@@ -130,14 +142,14 @@ export default function MetricsBar({ report }: MetricsBarProps) {
       <MetricCard
         label={t.metricDataDown}
         value={`${report.dataDownlinkGbitHour.toFixed(1)} ${t.gbitHourUnit}`}
-        sub={`Mem: ${report.memoryCapacityGbit}/${Math.ceil(report.memoryRequiredGbit)} Gb`}
+        sub={`${report.dataDownlinkGbitDay.toFixed(0)} / ${report.dataGenGbitDay.toFixed(0)} Gb/d`}
         ratio={downRatio}
         status={downStatus}
       />
       <MetricCard
         label={t.metricPower}
         value={`${report.powerGenWatts.toFixed(0)} / ${report.powerNeedWatts.toFixed(0)} W`}
-        sub={`Gen / Load`}
+        sub="Gen / Load"
         ratio={pwrRatio}
         status={pwrStatus}
       />

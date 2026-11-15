@@ -226,17 +226,6 @@ export interface ProcessorSpec {
 
 /* ==================== РЕЗУЛЬТАТ SOLVER.TS ==================== */
 
-export type GateId = 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10'
-
-export interface GateStatus {
-  id: GateId
-  owners: PlayerRole[]
-  passed: boolean
-  title: LocalizedText
-  summary: LocalizedText
-  advice?: LocalizedText
-}
-
 export type MissionPhaseFail = 'launch' | 'transit' | 'ins' | 'ops'
 export type MissionOutcome = 'success' | 'partial' | 'failed' | 'blocked'
 export type MedalTier = 'gold' | 'silver' | 'bronze' | 'experimental'
@@ -272,6 +261,17 @@ export interface MissionReport {
   memoryCapacityGbit: number
   memoryRequiredGbit: number
 
+  platformName: LocalizedText | null
+  instrumentsCount: number
+  maxInstruments: number
+  busCompatible: boolean
+
+  adcsPointingDeg: number | null
+  requiredPointingDeg: number
+  adcsCompatible: boolean
+
+  engineName: LocalizedText | null
+
   scienceRaw: number
   scienceInstalled: number
   sciencePotential: number
@@ -286,8 +286,8 @@ export interface MissionReport {
   lifeMonths: number
   nominalMonths: number
 
-  gates: GateStatus[]
-  allGatesPassed: boolean
+  metricIssues: LocalizedText[]
+  canLaunch: boolean
 
   outcome: MissionOutcome
   failedPhase?: MissionPhaseFail

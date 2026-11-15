@@ -241,16 +241,15 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
       <MetricsBar report={report} />
 
       {room.phase === 'design' ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <RoleWorkbench
-            room={room}
-            selfId={selfId}
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <RoleWorkbench room={room} selfId={selfId} />
+          <OrbitVisualizer
+            config={room.config}
             report={report}
             onLaunch={() => {
               launchMission(code).catch(() => undefined)
             }}
           />
-          <OrbitVisualizer config={room.config} report={report} />
         </div>
       ) : (
         <MissionReportScreen roomCode={code} config={room.config} report={report} />
