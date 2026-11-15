@@ -2,7 +2,7 @@ import type { Lang } from '../types/game'
 
 const en = {
   appTitle: 'ORBITAL ARCHITECT',
-  appSubtitle: 'Mission Control // Space Mission Design Game',
+  appSubtitle: 'Space Mission Design Game',
   tagline:
     'Design, launch and manage a complete space mission. Balance mass, power, budget, data, communications and time, alone or with up to three teammates.',
   yourName: 'Your name',
@@ -150,7 +150,7 @@ export type Dict = typeof en
 
 const uk: Dict = {
   appTitle: 'ОРБІТАЛЬНИЙ АРХІТЕКТОР',
-  appSubtitle: 'ЦУП // Гра з проєктування космічної місії',
+  appSubtitle: 'Гра з проєктування космічної місії',
   tagline:
     "Спроєктуйте, запустіть і ведіть повну космічну місію. Збалансуйте масу, енергію, бюджет, дані, зв'язок і час: наодинці або з трьома напарниками.",
   yourName: "Ваше ім'я",
