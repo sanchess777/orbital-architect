@@ -243,7 +243,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                   >
                     <div className="font-semibold text-slate-100">{pick(p.name)}</div>
                     <div className="mt-1 text-[11px] text-slate-400">
-                      Max {p.maxInstruments} inst · {p.coreWatts} W · {p.costM} M$ · +{p.devMonths}m
+                      Max {p.maxInstruments} inst · {p.coreWatts} W · {p.costM} M$
                     </div>
                   </button>
                 ))}
@@ -421,7 +421,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                       </div>
                       <div className="mt-1 text-[11px] text-slate-400">
                         {rk.costM} M$ · Rel {(rk.reliability * 100).toFixed(0)}% · TRL {rk.trl}
-                        {rk.availableFromMonth > 0 ? ` · ≥${rk.availableFromMonth}m` : ''}
                       </div>
                     </button>
                   )

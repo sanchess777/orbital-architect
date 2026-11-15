@@ -180,42 +180,7 @@ export function solveMission(
   const memoryLossFrac =
     memoryRequiredGbit > 0 ? Math.max(0, 1 - memoryCapacityGbit / memoryRequiredGbit) : 0
 
-  /* ==================== 4. ЧАС ТА ВІКНО ЗАПУСКУ ==================== */
-  const allTrls = [
-    9,
-    rocket.trl,
-    engine.trl,
-    adcs.trl,
-    panel.trl,
-    battery.trl,
-    radio.trl,
-    memory.trl,
-    processor.trl,
-    ...validInstruments.map((i) => i.trl),
-  ]
-  const minTrl = Math.min(...allTrls)
-  const devMonths =
-    target.tBaseMonths +
-    platform.devMonths +
-    1.5 * (9 - minTrl) +
-    0.8 * Math.max(0, validInstruments.length - 1) +
-    (config.optRadHard ? 1.5 : 0)
-
-  const readyMonth = devMonths + config.extraTestMonths
-  let launchMonth = Math.ceil(readyMonth)
-
-  if (Array.isArray(target.windows)) {
-    const found = target.windows.find((w) => w >= readyMonth)
-    if (found !== undefined) {
-      launchMonth = found
-    } else {
-      const last = target.windows[target.windows.length - 1]
-      launchMonth = last + 26 * Math.ceil((readyMonth - last) / 26)
-    }
-  }
-  const waitMonths = Math.max(0, launchMonth - readyMonth)
-
-  /* ==================== 5. НАУКОВА ЦІННІСТЬ ==================== */
+  /* ==================== 4. НАУКОВА ЦІННІСТЬ ==================== */
   const sortedInstr = [...validInstruments].sort((a, b) => b.sciencePoints - a.sciencePoints)
   const scienceRaw = sortedInstr.reduce((sum, inst, idx) => {
     const dimFactor = idx < 4 ? 1.0 : Math.pow(0.85, idx - 3)
@@ -238,7 +203,7 @@ export function solveMission(
 
   const scienceInstalled = scienceRaw * (1 + synergyBonus) * avgInstrSurvival
 
-  /* ==================== 6. БЮДЖЕТ ==================== */
+  /* ==================== 5. БЮДЖЕТ ==================== */
   const instrCost = validInstruments.reduce((sum, i) => sum + i.costM, 0)
   const optionsCost =
     (config.optEncryption ? 4 : 0) +
@@ -253,16 +218,18 @@ export function solveMission(
     optionsCost
 
   const groundCost = GROUND_STATION_COSTS_M[config.groundStations]
-  const opsCost = launchMonth * target.rTeamM + target.tNomMonths * target.rOpsM
+  const opsCost =
+    (target.tBaseMonths + config.extraTestMonths) * target.rTeamM +
+    target.tNomMonths * target.rOpsM
   const budgetUsedM =
     platform.costM + instrCost + subsystemsCost + rocket.costM + groundCost + opsCost
 
-  const budgetMaxM = target.bClassM * (1 + 0.20 * Math.min(1, scienceInstalled / target.sRef))
+  const budgetMaxM = target.bClassM
   const budgetReserveFrac =
     budgetMaxM > 0 ? Math.max(0, (budgetMaxM - budgetUsedM) / budgetMaxM) : 0
 
-  /* ==================== 7. НАДІЙНІСТЬ ТА РИЗИКИ ==================== */
-  const fTest = 1 - 0.4 * (1 - Math.exp(-(config.extraTestMonths + 0.5 * waitMonths) / 6))
+  /* ==================== 6. НАДІЙНІСТЬ ТА РИЗИКИ ==================== */
+  const fTest = 1 - 0.4 * (1 - Math.exp(-config.extraTestMonths / 6))
   const fBudget = 1 - 0.35 * (1 - Math.exp(-budgetReserveFrac / 0.08))
   const hasMassMargin = rocketLimitKg > 0 && (rocketLimitKg - launchMassKg) / rocketLimitKg >= 0.10
   const hasPowerMargin =
@@ -295,7 +262,7 @@ export function solveMission(
 
   const failProbTotal = 1 - (1 - pLaunch) * (1 - pTransit) * (1 - pIns) * (1 - pOps)
 
-  /* ==================== 8. ОЦІНКА ЗАГРОЗ (ПРЕВ'Ю + ПОЛІТ) ==================== */
+  /* ==================== 7. ОЦІНКА ЗАГРОЗ (ПРЕВ'Ю + ПОЛІТ) ==================== */
   const evaluateThreat = (threatId: (typeof target.threats)[number]['id']): {
     mitigated: boolean
     detail: LocalizedText
@@ -380,7 +347,7 @@ export function solveMission(
     }
   })
 
-  /* ==================== 9. 11 ВОРІТ GO / NO-GO ==================== */
+  /* ==================== 8. ВОРОТА GO / NO-GO ==================== */
   const gates: GateStatus[] = [
     {
       id: 'G1',
@@ -465,25 +432,8 @@ export function solveMission(
         uk: `${budgetUsedM.toFixed(1)} / ${budgetMaxM.toFixed(1)} М$`,
       },
       advice: {
-        en: 'Trim expensive subsystems, pick a cheaper rocket, or add high-value science.',
-        uk: 'Оптимізуйте дорогі підсистеми, оберіть дешевшу ракету або додайте науку.',
-      },
-    },
-    {
-      id: 'G7',
-      owners: ['flight'],
-      passed:
-        launchMonth <= target.tMaxMonths &&
-        rocket.availableFromMonth <= launchMonth &&
-        config.stationKeepingYears >= 0.5,
-      title: { en: 'G7 · Launch Window & Timeline', uk: 'G7 · Графік і вікно запуску' },
-      summary: {
-        en: `Month ${launchMonth} / max ${target.tMaxMonths}`,
-        uk: `Місяць ${launchMonth} / макс. ${target.tMaxMonths}`,
-      },
-      advice: {
-        en: 'Replace low-TRL components or reduce extra test months to catch the launch window.',
-        uk: 'Замініть компоненти з низьким TRL або зменште додаткові тести, щоб встигнути у вікно.',
+        en: 'Trim expensive subsystems, pick a cheaper rocket, or reduce ground stations.',
+        uk: 'Оптимізуйте дорогі підсистеми, оберіть дешевшу ракету або зменште кількість станцій.',
       },
     },
     {
@@ -554,22 +504,21 @@ export function solveMission(
 
   const allGatesPassed = gates.every((g) => g.passed)
 
-  /* ==================== 10. ОЧІКУВАНА НАУКА (ДЛЯ HUD) ==================== */
+  /* ==================== 9. ОЧІКУВАНА НАУКА (ДЛЯ HUD) ==================== */
   const fDuty = Math.sqrt(duty)
   const fData =
     dataGenGbitDay > 0
       ? Math.min(1.0, dataDownlinkGbitDay / dataGenGbitDay) * (1 - memoryLossFrac)
       : 1.0
   const fLife = Math.min(1.0, lifeMonths / target.tNomMonths)
-  const fFresh = Math.max(0.65, 1 - 0.012 * Math.max(0, launchMonth - target.tBaseMonths))
 
   const unmitigatedPreview = threatResults.filter((tr) => !tr.mitigated).length
   const expectedThreatFactor = Math.max(0.5, 1 - 0.14 * unmitigatedPreview)
 
-  const sciencePotential = scienceInstalled * fDuty * fData * fLife * fFresh * expectedThreatFactor
+  const sciencePotential = scienceInstalled * fDuty * fData * fLife * expectedThreatFactor
   const scienceExpected = sciencePotential * (1 - failProbTotal)
 
-  /* ==================== 11. ДЕТЕРМІНОВАНА СИМУЛЯЦІЯ ПОЛЬОТУ ==================== */
+  /* ==================== 10. ДЕТЕРМІНОВАНА СИМУЛЯЦІЯ ПОЛЬОТУ ==================== */
   const rng = createRng(hashSeed(seed, attempt, 777))
   const telemetryLog: LocalizedText[] = []
 
@@ -672,7 +621,7 @@ export function solveMission(
     }
   }
 
-  /* ==================== 12. ФІНАЛЬНИЙ РЕЙТИНГ (0–1000) ТА МЕДАЛЬ ==================== */
+  /* ==================== 11. ФІНАЛЬНИЙ РЕЙТИНГ (0–1000) ТА МЕДАЛЬ ==================== */
   let score = 0
   if (outcome === 'success' || outcome === 'partial') {
     const sciNorm = Math.min(1.0, deliveredScience / target.sRef)
@@ -720,10 +669,10 @@ export function solveMission(
     dataDownlinkGbitDay,
     memoryCapacityGbit,
     memoryRequiredGbit,
-    devMonths,
-    launchMonth,
+    devMonths: target.tBaseMonths,
+    launchMonth: target.tBaseMonths,
     maxLaunchMonth: target.tMaxMonths,
-    waitMonths,
+    waitMonths: 0,
     scienceRaw,
     scienceInstalled,
     sciencePotential,

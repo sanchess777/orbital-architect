@@ -77,12 +77,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
   const g5Ok = report.gates.find((g) => g.id === 'G5')?.passed ?? false
   const dataStatus = !g4Ok || !g5Ok ? 'bad' : dataRatio > 0.9 ? 'warn' : 'ok'
 
-  // 6. Час запуску
-  const timeRatio = report.maxLaunchMonth > 0 ? report.launchMonth / report.maxLaunchMonth : 1
-  const g7Ok = report.gates.find((g) => g.id === 'G7')?.passed ?? false
-  const timeStatus = !g7Ok ? 'bad' : timeRatio > 0.9 ? 'warn' : 'ok'
-
-  // 7. Наука
+  // 6. Наука
   const sciRatio = report.scienceRef > 0 ? report.scienceExpected / report.scienceRef : 0
   const sciStatus =
     report.scienceInstalled < report.scienceMin
@@ -91,7 +86,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         ? 'warn'
         : 'ok'
 
-  // 8. Ризик провалу
+  // 7. Ризик провалу
   const riskRatio = report.failProbMax > 0 ? report.failProbTotal / report.failProbMax : 1
   const riskStatus =
     report.failProbTotal > report.failProbMax
@@ -101,7 +96,7 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         : 'ok'
 
   return (
-    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
       <MetricCard
         label={t.metricBudget}
         value={`${report.budgetUsedM.toFixed(0)} / ${report.budgetMaxM.toFixed(0)} M$`}
@@ -138,16 +133,9 @@ export default function MetricsBar({ report }: MetricsBarProps) {
         status={dataStatus}
       />
       <MetricCard
-        label={t.metricTime}
-        value={`${report.launchMonth} / ${report.maxLaunchMonth} ${t.monthsUnit}`}
-        sub={`Life: ${report.lifeMonths.toFixed(0)} / ${report.nominalMonths} ${t.monthsUnit}`}
-        ratio={timeRatio}
-        status={timeStatus}
-      />
-      <MetricCard
         label={t.metricScience}
         value={`${report.scienceExpected.toFixed(1)} pts`}
-        sub={`Inst: ${report.scienceInstalled.toFixed(0)} (min ${report.scienceMin})`}
+        sub={`Inst: ${report.scienceInstalled.toFixed(0)} (min ${report.scienceMin}) · ${report.lifeMonths.toFixed(0)}/${report.nominalMonths}${t.monthsUnit}`}
         ratio={sciRatio}
         status={sciStatus}
       />
