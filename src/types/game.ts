@@ -161,6 +161,7 @@ export interface InstrumentSpec {
 export interface RocketSpec {
   id: string
   name: LocalizedText
+  targets: TargetId[]
   capKg: Record<TargetId, number>
   costM: number
   reliability: number
@@ -209,6 +210,7 @@ export interface BatterySpec {
 export interface RadioSpec {
   id: string
   name: LocalizedText
+  targets: TargetId[]
   rfWatts: number
   powerWatts: number
   massKg: number
