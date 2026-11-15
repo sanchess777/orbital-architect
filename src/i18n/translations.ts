@@ -42,7 +42,6 @@ const en = {
   sharedCounter: 'Shared counter',
   counterHint: 'Connection test: every player in the room sees the same number instantly.',
 
-  // Лобі: вибір цілі
   selectTargetTitle: '1. Select Mission Destination',
   selectTargetHint: 'The host chooses the target orbit before entering the engineering workbench.',
   waitingForHost: 'Waiting for the host to select a destination and start design…',
@@ -54,13 +53,11 @@ const en = {
   daysUnit: 'd',
   monthsUnit: 'mo',
 
-  // Перемикач ролей під час гри
   crewAndRolesBtn: 'Crew & Roles',
   hideRolesBtn: 'Hide Roles',
   noRoleBanner: 'You have no role assigned yet — claim a role to edit its systems.',
   pickRoleBtn: 'Choose Role',
 
-  // Верхня панель 8 метрик
   metricBudget: 'Budget',
   metricMass: 'Launch Mass',
   metricPower: 'Power (EOL)',
@@ -71,7 +68,6 @@ const en = {
   metricRisk: 'Failure Risk',
   reserveLabel: 'Reserve',
 
-  // Візуалізатор орбіти
   orbitSchemaTitle: 'Orbital & Link Geometry',
   eclipseZone: 'Eclipse Shadow',
   groundCoverage: 'Station Contact',
@@ -81,19 +77,18 @@ const en = {
   protectedTag: 'PROTECTED',
   vulnerableTag: 'UNPROTECTED (-20% SCI)',
 
-  // Конструктор ролей і Ворота
   backToLobby: 'Change Target',
   readOnlyBadge: 'READ-ONLY (Teammate)',
   yourRoleBadge: 'YOUR WORKBENCH',
   gatesTitle: 'Go / No-Go Flight Readiness Gates',
   roleGoReady: 'GO CONFIRMED',
   confirmGoBtn: 'Confirm GO for this Role',
+  confirmAllMyGoBtn: 'Confirm GO for All My Roles',
   revokeGoBtn: 'Cancel GO',
   launchMissionBtn: 'LAUNCH MISSION',
   launchBlockedHint: 'Resolve all red gates and confirm GO on all 4 roles to launch.',
   attemptLabel: 'Attempt',
 
-  // Елементи керування ролей
   secInstruments: 'Scientific Instruments (max',
   secDutyCycle: 'Instrument Duty Cycle',
   dutyEco: 'Eco (40%)',
@@ -118,11 +113,11 @@ const en = {
   secMemory: 'Onboard Data Storage',
   secProcessor: 'Onboard Data Processing',
   secStations: 'Deep Space Ground Stations',
+  groundStationLabel: 'DSN Ground Station(s)',
   secCommsOptions: 'Avionics & Link Options',
   optRedundancy: 'Critical Subsystem Redundancy (p → p², ×1.8 mass, ×1.6 cost)',
   optEncryption: 'Encrypted Telemetry & Command Link (+1 kg, +5 W, +3 M$)',
 
-  // Екран звіту
   reportTitle: 'Post-Mission Analysis & Flight Report',
   outcomeSuccess: 'MISSION SUCCESS',
   outcomePartial: 'PARTIAL SUCCESS',
@@ -136,6 +131,16 @@ const en = {
   nasaAnalogLabel: 'Closest Real NASA Mission Analog',
   deliveredScienceLabel: 'Net Science Delivered',
   achievedLifeLabel: 'Operational Lifetime',
+  flightPhasesTitle: 'Flight Timeline & Phase Risk Check',
+  phaseLaunch: '1. Launch',
+  phaseTransit: '2. Transit',
+  phaseIns: '3. Orbit Insertion',
+  phaseOps: '4. Orbital Ops',
+  phaseRiskLabel: 'Phase risk',
+  scoreBreakdownTitle: 'Score Breakdown',
+  scoreSciPart: 'Science Value',
+  scoreRelPart: 'Reliability',
+  scoreLifePart: 'Operational Life',
   hazardOutcomeTitle: 'Environmental & Security Events',
   telemetryLogTitle: 'Flight Telemetry Log',
   modifyDesignBtn: 'Return to Workbench & Iterate',
@@ -185,7 +190,6 @@ const uk: Dict = {
   sharedCounter: 'Спільний лічильник',
   counterHint: "Перевірка зв'язку: усі гравці кімнати миттєво бачать те саме число.",
 
-  // Лобі: вибір цілі
   selectTargetTitle: '1. Оберіть ціль космічної місії',
   selectTargetHint: 'Власник кімнати обирає орбіту призначення перед переходом у конструктор.',
   waitingForHost: 'Очікуємо, поки власник кімнати обере ціль і запустить проєктування…',
@@ -197,13 +201,11 @@ const uk: Dict = {
   daysUnit: 'діб',
   monthsUnit: 'міс.',
 
-  // Перемикач ролей під час гри
   crewAndRolesBtn: 'Екіпаж і ролі',
   hideRolesBtn: 'Сховати ролі',
   noRoleBanner: 'У вас ще немає ролі — оберіть роль, щоб редагувати її системи.',
   pickRoleBtn: 'Обрати роль',
 
-  // Верхня панель 8 метрик
   metricBudget: 'Бюджет',
   metricMass: 'Стартова маса',
   metricPower: 'Енергія (EOL)',
@@ -214,7 +216,6 @@ const uk: Dict = {
   metricRisk: 'Ризик провалу',
   reserveLabel: 'Резерв',
 
-  // Візуалізатор орбіти
   orbitSchemaTitle: 'Схема орбіти та зони зв’язку',
   eclipseZone: 'Тінь планети',
   groundCoverage: 'Зона станцій',
@@ -224,19 +225,18 @@ const uk: Dict = {
   protectedTag: 'ЗАХИЩЕНО',
   vulnerableTag: 'БЕЗ ЗАХИСТУ (-20% НАУКИ)',
 
-  // Конструктор ролей і Ворота
   backToLobby: 'Змінити ціль',
   readOnlyBadge: 'ЛИШЕ ПЕРЕГЛЯД (Напарник)',
   yourRoleBadge: 'ВАША ПАНЕЛЬ',
   gatesTitle: 'Перевірка готовності (11 воріт Go / No-Go)',
   roleGoReady: 'GO ПІДТВЕРДЖЕНО',
   confirmGoBtn: 'Підтвердити GO для цієї ролі',
+  confirmAllMyGoBtn: 'Підтвердити GO за всі мої ролі',
   revokeGoBtn: 'Скасувати GO',
   launchMissionBtn: 'ЗАПУСТИТИ МІСІЮ',
   launchBlockedHint: 'Закрийте всі червоні ворота та натисніть GO за всі 4 ролі.',
   attemptLabel: 'Спроба',
 
-  // Елементи керування ролей
   secInstruments: 'Наукові прилади (макс.',
   secDutyCycle: 'Режим роботи приладів',
   dutyEco: 'Еко (40%)',
@@ -261,11 +261,11 @@ const uk: Dict = {
   secMemory: 'Бортовий накопичувач пам’яті',
   secProcessor: 'Бортова обробка даних',
   secStations: 'Наземні станції зв’язку',
+  groundStationLabel: 'Наземна станція(ї)',
   secCommsOptions: 'Надійність і захист каналу',
   optRedundancy: 'Резервування критичних систем (p → p², ×1,8 маса, ×1,6 ціна)',
   optEncryption: 'Шифрований канал управління (+1 кг, +5 Вт, +3 М$)',
 
-  // Екран звіту
   reportTitle: 'Післяпольотний аналіз та звіт місії',
   outcomeSuccess: 'ПОВНИЙ УСПІХ МІСІЇ',
   outcomePartial: 'ЧАСТКОВИЙ УСПІХ',
@@ -279,6 +279,16 @@ const uk: Dict = {
   nasaAnalogLabel: 'Найближчий аналог реальної місії NASA',
   deliveredScienceLabel: 'Зібрано наукових даних',
   achievedLifeLabel: 'Термін активної роботи',
+  flightPhasesTitle: 'Етапи польоту та ризики фаз',
+  phaseLaunch: '1. Старт ракети',
+  phaseTransit: '2. Переліт',
+  phaseIns: '3. Вихід на орбіту',
+  phaseOps: '4. Робота на орбіті',
+  phaseRiskLabel: 'Ризик фази',
+  scoreBreakdownTitle: 'Складові оцінки',
+  scoreSciPart: 'Наукова цінність',
+  scoreRelPart: 'Надійність',
+  scoreLifePart: 'Довговічність',
   hazardOutcomeTitle: 'Вплив космічного середовища та загроз',
   telemetryLogTitle: 'Журнал телеметрії польоту',
   modifyDesignBtn: 'Повернутися в конструктор і покращити',

@@ -35,8 +35,8 @@ interface RoleWorkbenchProps {
 
 export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWorkbenchProps) {
   const { t, pick } = useLang()
-  const myFirstRole = ROLES.find((r) => room.roleOwners[r] === selfId) ?? 'science'
-  const [activeRole, setActiveRole] = useState<PlayerRole>(myFirstRole)
+  const myRoles = ROLES.filter((r) => room.roleOwners[r] === selfId)
+  const [activeRole, setActiveRole] = useState<PlayerRole>(myRoles[0] ?? 'science')
 
   const config = room.config
   const target = TARGETS[config.targetId]
@@ -50,6 +50,12 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
   const roleGatesPassed = roleGates.every((g) => g.passed)
   const isRoleReady = room.readyRoles[activeRole]
   const allRolesReady = ROLES.every((r) => room.readyRoles[r])
+
+  const myUnreadyRoles = myRoles.filter((r) => !room.readyRoles[r])
+  const allMyRolesGatesPassed =
+    myRoles.length > 0 &&
+    myRoles.every((r) => report.gates.filter((g) => g.owners.includes(r)).every((g) => g.passed))
+  const showConfirmAllMine = myRoles.length > 1 && myUnreadyRoles.length > 0
 
   const patch = (next: Partial<MissionConfig>) => {
     if (!canEdit) return
@@ -72,9 +78,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-      {/* ЛІВА / ЦЕНТРАЛЬНА ПАНЕЛЬ: ВКЛАДКИ РОЛЕЙ ТА ІНСТРУМЕНТАРІЙ */}
       <div className="flex flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        {/* Навігація по 4 ролях */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {ROLES.map((role) => {
             const isSelected = role === activeRole
@@ -110,7 +114,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           })}
         </div>
 
-        {/* Заголовок обраної ролі + статус доступу */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
           <div>
             <div className="flex items-center gap-2">
@@ -131,7 +134,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         </div>
 
-        {/* ==================== 1. НАУКОВИЙ КЕРІВНИК ==================== */}
         {activeRole === 'science' && (
           <div className="space-y-4">
             <div>
@@ -220,10 +222,8 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
-        {/* ==================== 2. ІНЖЕНЕР АПАРАТА ==================== */}
         {activeRole === 'bus' && (
           <div className="space-y-4">
-            {/* Платформа */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secPlatform}
@@ -250,7 +250,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* ADCS */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secAdcs}
@@ -277,7 +276,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Сонячні панелі + площа */}
             <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secPanels}
@@ -322,7 +320,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Батареї + ємність */}
             <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secBattery}
@@ -367,7 +364,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Захист корпусу */}
             <div className="space-y-2 rounded border border-slate-800 bg-slate-950/40 p-3 text-xs">
               <div className="font-semibold uppercase tracking-wider text-slate-300">
                 {t.secBusProtection}
@@ -396,10 +392,8 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
-        {/* ==================== 3. БАЛІСТИК ==================== */}
         {activeRole === 'flight' && (
           <div className="space-y-4">
-            {/* Ракета */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secRocket}
@@ -435,7 +429,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Двигун */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secEngine}
@@ -462,7 +455,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Повзунки палива і тестів */}
             <div className="grid gap-3 rounded border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-2">
               <div>
                 <div className="flex justify-between text-xs text-slate-300">
@@ -517,10 +509,8 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
-        {/* ==================== 4. ЗВ'ЯЗОК І ЦУП ==================== */}
         {activeRole === 'comms' && (
           <div className="space-y-4">
-            {/* Радіо */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secRadio}
@@ -555,7 +545,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Пам'ять */}
             <div>
               <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 {t.secMemory}
@@ -582,7 +571,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Обробка даних + наземні станції */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
@@ -628,7 +616,7 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
                       } disabled:cursor-not-allowed`}
                     >
                       <span className="font-medium text-slate-100">
-                        {cnt} DSN Station{cnt > 1 ? 's' : ''}
+                        {cnt} · {t.groundStationLabel}
                       </span>
                       <span className="text-[11px] text-cyan-300">
                         {GROUND_STATION_COSTS_M[cnt]} M$
@@ -639,7 +627,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               </div>
             </div>
 
-            {/* Опції зв'язку та резервування */}
             <div className="space-y-2 rounded border border-slate-800 bg-slate-950/40 p-3 text-xs">
               <div className="font-semibold uppercase tracking-wider text-slate-300">
                 {t.secCommsOptions}
@@ -668,13 +655,14 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         )}
 
-        {/* Підтвердження GO для поточної ролі */}
         {canEdit && (
           <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
             <div className="text-xs text-slate-400">
               {pick(ROLE_INFO[activeRole].name)}:{' '}
               <span className={isRoleReady ? 'font-bold text-emerald-400' : 'text-slate-300'}>
-                {isRoleReady ? t.roleGoReady : `${roleGates.filter((g) => g.passed).length}/${roleGates.length} Gates`}
+                {isRoleReady
+                  ? t.roleGoReady
+                  : `${roleGates.filter((g) => g.passed).length}/${roleGates.length} Gates`}
               </span>
             </div>
             <button
@@ -697,7 +685,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
         )}
       </div>
 
-      {/* ПРАВА ПАНЕЛЬ: 11 ВОРІТ GO / NO-GO + КНОПКА ЗАПУСКУ */}
       <div className="flex flex-col justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
         <div>
           <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-cyan-400">
@@ -728,7 +715,6 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
           </div>
         </div>
 
-        {/* Статуси GO 4 ролей + запуск */}
         <div className="space-y-2.5 border-t border-slate-800 pt-3">
           <div className="grid grid-cols-2 gap-1.5">
             {ROLES.map((r) => {
@@ -748,6 +734,21 @@ export default function RoleWorkbench({ room, selfId, report, onLaunch }: RoleWo
               )
             })}
           </div>
+
+          {showConfirmAllMine && (
+            <button
+              type="button"
+              disabled={!allMyRolesGatesPassed}
+              onClick={() => {
+                Promise.all(myUnreadyRoles.map((r) => setRoleReady(room.code, r, true))).catch(
+                  () => undefined,
+                )
+              }}
+              className="w-full rounded border border-cyan-500/50 bg-cyan-950/40 px-3 py-2 text-xs font-bold uppercase tracking-wider text-cyan-200 transition hover:bg-cyan-900/50 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900 disabled:text-slate-600"
+            >
+              {t.confirmAllMyGoBtn} ({myRoles.length})
+            </button>
+          )}
 
           <button
             type="button"

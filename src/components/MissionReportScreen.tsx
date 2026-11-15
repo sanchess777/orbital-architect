@@ -1,13 +1,15 @@
 import { TARGETS } from '../engine/catalog'
 import { useLang } from '../i18n/LangContext'
 import { returnToDesign } from '../multiplayer/roomApi'
-import type { MissionConfig, MissionReport } from '../types/game'
+import type { MissionConfig, MissionPhaseFail, MissionReport } from '../types/game'
 
 interface MissionReportScreenProps {
   roomCode: string
   config: MissionConfig
   report: MissionReport
 }
+
+const PHASE_ORDER: MissionPhaseFail[] = ['launch', 'transit', 'ins', 'ops']
 
 export default function MissionReportScreen({
   roomCode,
@@ -42,9 +44,22 @@ export default function MissionReportScreen({
           ? t.medalBronze
           : t.medalExperimental
 
+  const phaseLabels: Record<MissionPhaseFail, string> = {
+    launch: t.phaseLaunch,
+    transit: t.phaseTransit,
+    ins: t.phaseIns,
+    ops: t.phaseOps,
+  }
+
+  const failedIdx = report.failedPhase ? PHASE_ORDER.indexOf(report.failedPhase) : -1
+
+  // Частки балів для наочної розбивки (500 / 300 / 200)
+  const sciPts = Math.round(500 * Math.min(1, report.scienceExpected / target.sRef))
+  const relPts = Math.round(300 * Math.max(0, 1 - report.failProbTotal))
+  const lifePts = Math.round(200 * Math.min(1, report.lifeMonths / target.tNomMonths))
+
   return (
     <div className="space-y-4">
-      {/* Головний банер результату */}
       <div className={`rounded-lg border p-5 ${bannerStyle}`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -73,13 +88,49 @@ export default function MissionReportScreen({
         </div>
       </div>
 
-      {/* Ключові підсумки + Аналог NASA */}
-      <div className="grid gap-3 md:grid-cols-3">
+      {/* Етапи польоту та перевірка ризиків */}
+      <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+        <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-cyan-400">
+          {t.flightPhasesTitle}
+        </h3>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {PHASE_ORDER.map((ph, idx) => {
+            const probPct = (report.phaseProbs[ph] * 100).toFixed(1)
+            const isFailedHere = failedIdx === idx
+            const isSkipped = failedIdx !== -1 && idx > failedIdx
+            const isBlocked = report.outcome === 'blocked'
+
+            const cardClass =
+              isBlocked || isSkipped
+                ? 'border-slate-800 bg-slate-950/40 text-slate-500'
+                : isFailedHere
+                  ? 'border-rose-500/60 bg-rose-950/30 text-rose-200'
+                  : 'border-emerald-500/40 bg-emerald-950/20 text-emerald-200'
+
+            return (
+              <div key={ph} className={`rounded border p-3 text-xs ${cardClass}`}>
+                <div className="flex items-center justify-between font-bold">
+                  <span>{phaseLabels[ph]}</span>
+                  <span>
+                    {isBlocked || isSkipped ? '—' : isFailedHere ? '✕' : '✓'}
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] opacity-80">
+                  {t.phaseRiskLabel}: {probPct}%
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Ключові підсумки + Аналог NASA + Розбивка балів */}
+      <div className="grid gap-3 md:grid-cols-4">
         <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
           <div className="text-xs uppercase tracking-wider text-slate-400">
             {t.nasaAnalogLabel}
           </div>
-          <div className="mt-1 text-base font-bold text-cyan-300">{pick(target.analog)}</div>
+          <div className="mt-1 text-sm font-bold text-cyan-300">{pick(target.analog)}</div>
         </div>
 
         <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
@@ -99,6 +150,24 @@ export default function MissionReportScreen({
           <div className="mt-1 text-base font-bold tabular-nums text-slate-100">
             {report.outcome === 'failed' ? '0' : report.lifeMonths.toFixed(1)} /{' '}
             {report.nominalMonths} {t.monthsUnit}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-xs">
+          <div className="uppercase tracking-wider text-slate-400">{t.scoreBreakdownTitle}</div>
+          <div className="mt-1.5 space-y-1 tabular-nums text-slate-200">
+            <div className="flex justify-between">
+              <span>{t.scoreSciPart}:</span>
+              <span className="font-semibold text-cyan-300">{sciPts} / 500</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{t.scoreRelPart}:</span>
+              <span className="font-semibold text-cyan-300">{relPts} / 300</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{t.scoreLifePart}:</span>
+              <span className="font-semibold text-cyan-300">{lifePts} / 200</span>
+            </div>
           </div>
         </div>
       </div>

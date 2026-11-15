@@ -9,6 +9,7 @@ import {
   launchMission,
   releaseRole,
   removePlayer,
+  returnToLobby,
   setRoleReady,
   startMissionDesign,
 } from '../multiplayer/roomApi'
@@ -39,6 +40,12 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
   useEffect(() => {
     if (status === 'ready' && !isMember) onRemoved()
   }, [status, isMember, onRemoved])
+
+  useEffect(() => {
+    if (room?.phase === 'lobby') {
+      setSelectedTarget(room.config.targetId)
+    }
+  }, [room?.phase, room?.config.targetId])
 
   const report = useMemo(() => {
     if (!room) return null
@@ -104,7 +111,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
             onRelease={handleRelease}
           />
 
-          {/* Вибір цілі місії власником */}
           <section className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-cyan-400">
               {t.selectTargetTitle}
@@ -175,7 +181,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
-      {/* Компактний заголовок місії + кнопка вибору ролей */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-bold text-cyan-300">{pick(currentTarget.name)}</span>
@@ -185,6 +190,17 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
           <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
             {t.attemptLabel} #{room.attempt}
           </span>
+          {isHost && (
+            <button
+              type="button"
+              onClick={() => {
+                returnToLobby(code).catch(() => undefined)
+              }}
+              className="rounded border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-xs text-slate-300 transition hover:border-cyan-500 hover:text-cyan-200"
+            >
+              ← {t.backToLobby}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -205,7 +221,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
         </div>
       </div>
 
-      {/* Підказка для гравця, який щойно приєднався до запущеної кімнати без ролі */}
       {myRolesCount === 0 && !rolesDrawerOpen && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-950/30 px-4 py-2.5 text-xs text-amber-200">
           <span>{t.noRoleBanner}</span>
@@ -219,7 +234,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
         </div>
       )}
 
-      {/* Висувна панель екіпажу та перерозподілу ролей у будь-який момент */}
       {rolesDrawerOpen && (
         <section className="grid gap-4 rounded-lg border border-cyan-500/40 bg-slate-900/90 p-4 lg:grid-cols-[320px_1fr]">
           <PlayersPanel
@@ -238,7 +252,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
         </section>
       )}
 
-      {/* Верхня панель 8 метрик (видна всім учасникам) */}
       <MetricsBar report={report} />
 
       {room.phase === 'design' ? (
