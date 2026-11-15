@@ -146,7 +146,7 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
                 )
               })}
             </div>
-            
+
             <div className="mt-4 flex items-center justify-end">
               {isHost ? (
                 <button
@@ -176,12 +176,6 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-bold text-cyan-300">{pick(currentTarget.name)}</span>
-          <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-            Δv {currentTarget.dvKmS} km/s
-          </span>
-          <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-            {t.attemptLabel} #{room.attempt}
-          </span>
           {isHost && (
             <button
               type="button"
