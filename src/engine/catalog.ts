@@ -4,6 +4,7 @@ import type {
   DutyCycleId,
   EngineSpec,
   InstrumentSpec,
+  LocalizedText,
   MemorySpec,
   MissionConfig,
   MissionTarget,
