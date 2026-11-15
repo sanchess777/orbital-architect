@@ -5,41 +5,36 @@ export const ROLES: PlayerRole[] = ['science', 'bus', 'flight', 'comms']
 
 export interface RoleInfo {
   name: LocalizedText
-  segment: LocalizedText
   description: LocalizedText
 }
 
 export const ROLE_INFO: Record<PlayerRole, RoleInfo> = {
   science: {
     name: { en: 'Science Lead', uk: 'Науковий керівник' },
-    segment: { en: 'User Segment', uk: 'Сегмент користувачів' },
     description: {
-      en: 'Chooses the mission goal and the scientific instruments.',
-      uk: 'Обирає мету місії та наукові прилади.',
+      en: 'Selects and installs scientific instruments.',
+      uk: 'Обирає та встановлює прилади.',
     },
   },
   bus: {
     name: { en: 'Spacecraft Engineer', uk: 'Інженер апарата' },
-    segment: { en: 'Space Segment', uk: 'Космічний сегмент' },
     description: {
-      en: 'Designs the spacecraft body, solar panels, batteries and attitude control.',
-      uk: 'Проєктує корпус апарата, сонячні панелі, батареї та систему орієнтації.',
+      en: 'Selects the platform and manages instrument power supply.',
+      uk: 'Обирає платформу, відповідає за живлення приладів.',
     },
   },
   flight: {
-    name: { en: 'Flight Dynamics', uk: 'Балістик' },
-    segment: { en: 'Launch Segment', uk: 'Сегмент запуску' },
+    name: { en: 'Flight Engineer', uk: 'Інженер польоту' },
     description: {
-      en: 'Picks the orbit and the launch vehicle and watches the mass limit.',
-      uk: 'Обирає орбіту й ракету-носій та стежить за лімітом маси.',
+      en: 'Selects the launch vehicle and manages spacecraft control.',
+      uk: 'Обирає ракету-носій, відповідає за керування пристроєм.',
     },
   },
   comms: {
-    name: { en: 'Comms & Ops', uk: "Зв'язок і ЦУП" },
-    segment: { en: 'Ground Segment', uk: 'Наземний сегмент' },
+    name: { en: 'Communications Officer', uk: "Зв'язківець" },
     description: {
-      en: 'Handles antennas, ground stations and downlink capacity.',
-      uk: 'Відповідає за антени, наземні станції та пропускну здатність каналу.',
+      en: 'Responsible for antennas and transmitter bandwidth.',
+      uk: 'Відповідальний за антени та пропускну здатність передавачів.',
     },
   },
 }

@@ -102,6 +102,7 @@ export interface TargetThreat {
 export interface MissionTarget {
   id: TargetId
   name: LocalizedText
+  goal: LocalizedText
   injectionOrbit: LocalizedText
   dvKmS: number
   dvBreakdown: LocalizedText

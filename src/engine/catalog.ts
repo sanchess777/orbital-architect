@@ -22,6 +22,10 @@ export const TARGETS: Record<TargetId, MissionTarget> = {
   leo: {
     id: 'leo',
     name: { en: 'Low Earth Orbit (LEO)', uk: 'Низька навколоземна орбіта (LEO)' },
+    goal: {
+      en: 'Study the atmosphere, human thermal footprint, CO₂ concentration, and glacier melting.',
+      uk: 'Дослідження атмосфери, теплового сліду людини, концентрації CO₂, танення льодовиків.',
+    },
     injectionOrbit: { en: 'LEO 500 km SSO', uk: 'LEO 500 км (ССО)' },
     dvKmS: 0.10,
     dvBreakdown: { en: 'orbit maintenance & deorbit', uk: 'корекції орбіти' },
@@ -84,6 +88,10 @@ export const TARGETS: Record<TargetId, MissionTarget> = {
   moon: {
     id: 'moon',
     name: { en: 'Lunar Orbit (Moon)', uk: 'Орбіта Місяця' },
+    goal: {
+      en: 'Surface photography. Search for water and signs of seismic and volcanic activity.',
+      uk: 'Фотографування поверхні. Пошук води, ознак сейсмічної та вулканічної активності.',
+    },
     injectionOrbit: { en: 'Trans-Lunar Injection (TLI)', uk: 'Траєкторія до Місяця (TLI)' },
     dvKmS: 1.00,
     dvBreakdown: { en: '0.90 lunar orbit insertion + 0.10 trim', uk: 'вхід на орбіту 0,9 + корекції 0,1' },
@@ -146,6 +154,10 @@ export const TARGETS: Record<TargetId, MissionTarget> = {
   mars: {
     id: 'mars',
     name: { en: 'Mars Orbit (Mars)', uk: 'Орбіта Марса' },
+    goal: {
+      en: 'Atmospheric research. Surface photography. Search for water. Magnetic field research.',
+      uk: 'Дослідження атмосфери. Фотографування поверхні. Пошук води. Дослідження магнітного поля.',
+    },
     injectionOrbit: { en: 'Trans-Mars Injection (TMI)', uk: 'Траєкторія до Марса (TMI)' },
     dvKmS: 1.40,
     dvBreakdown: { en: '1.30 Mars orbit insertion + 0.10 trim', uk: 'вхід на орбіту 1,3 + корекції 0,1' },

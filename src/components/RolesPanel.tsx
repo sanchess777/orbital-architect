@@ -66,10 +66,7 @@ export default function RolesPanel({ room, selfId, onTake, onRelease }: RolesPan
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-semibold">{pick(info.name)}</h3>
-                  <p className="text-xs text-cyan-500">{pick(info.segment)}</p>
-                </div>
+                <h3 className="font-semibold">{pick(info.name)}</h3>
                 {action}
               </div>
               <p className="mt-2 text-xs text-slate-400">{pick(info.description)}</p>

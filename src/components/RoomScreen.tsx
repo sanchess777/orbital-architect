@@ -127,34 +127,26 @@ export default function RoomScreen({ code, selfId, onRemoved }: RoomScreenProps)
                     type="button"
                     disabled={!isHost}
                     onClick={() => setSelectedTarget(tid)}
-                    className={`rounded-md border p-3 text-left transition ${
+                    className={`flex flex-col justify-between rounded-md border p-3 text-left transition ${
                       active
                         ? 'border-cyan-400 bg-cyan-950/40'
                         : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                     } disabled:cursor-default`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2">
                       <span className="text-sm font-bold text-slate-100">{pick(trg.name)}</span>
                       <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-cyan-300">
                         {trg.bClassM} M$
                       </span>
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 text-[11px] text-slate-400">
-                      <span>
-                        {t.targetFlight}: {trg.flightDays} {t.daysUnit}
-                      </span>
-                      <span>
-                        {t.targetLife}: {trg.tNomMonths} {t.monthsUnit}
-                      </span>
-                      <span>
-                        {t.targetScienceMin}: {trg.sMin} pts
-                      </span>
-                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                      {pick(trg.goal)}
+                    </p>
                   </button>
                 )
               })}
             </div>
-
+            
             <div className="mt-4 flex items-center justify-end">
               {isHost ? (
                 <button
